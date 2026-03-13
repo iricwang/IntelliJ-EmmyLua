@@ -35,7 +35,7 @@ public class LuaGotoStatImpl extends LuaStatementImpl implements LuaGotoStat {
   @Override
   @NotNull
   public PsiReference[] getReferences() {
-    return LuaPsiImplUtilKt.getReferences(this);
+    return LuaPsiImplUtil.getReferences(this);
   }
 
 }

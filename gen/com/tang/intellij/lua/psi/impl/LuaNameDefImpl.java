@@ -47,25 +47,25 @@ public class LuaNameDefImpl extends StubBasedPsiElementBase<LuaNameDefStub> impl
   @Override
   @NotNull
   public String getName() {
-    return LuaPsiImplUtilKt.getName(this);
+    return LuaPsiImplUtil.getName(this);
   }
 
   @Override
   @NotNull
   public PsiElement setName(@NotNull String name) {
-    return LuaPsiImplUtilKt.setName(this, name);
+    return LuaPsiImplUtil.setName(this, name);
   }
 
   @Override
   @NotNull
   public PsiElement getNameIdentifier() {
-    return LuaPsiImplUtilKt.getNameIdentifier(this);
+    return LuaPsiImplUtil.getNameIdentifier(this);
   }
 
   @Override
   @NotNull
   public SearchScope getUseScope() {
-    return LuaPsiImplUtilKt.getUseScope(this);
+    return LuaPsiImplUtil.getUseScope(this);
   }
 
 }

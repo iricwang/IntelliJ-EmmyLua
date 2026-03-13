@@ -31,7 +31,7 @@ public class LuaDocStringLiteralTyImpl extends LuaDocTyImpl implements LuaDocStr
   @Override
   @NotNull
   public ITy getType() {
-    return LuaDocPsiImplUtilKt.getType(this);
+    return LuaDocPsiImplUtil.getType(this);
   }
 
   @Override

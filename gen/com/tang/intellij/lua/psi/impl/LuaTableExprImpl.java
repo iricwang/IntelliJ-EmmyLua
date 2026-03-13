@@ -52,7 +52,7 @@ public class LuaTableExprImpl extends LuaTableExprMixin implements LuaTableExpr 
   @Override
   @Nullable
   public LuaTableField findField(@NotNull String fieldName) {
-    return LuaPsiImplUtilKt.findField(this, fieldName);
+    return LuaPsiImplUtil.findField(this, fieldName);
   }
 
 }

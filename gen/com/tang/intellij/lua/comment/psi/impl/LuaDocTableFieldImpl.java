@@ -56,47 +56,47 @@ public class LuaDocTableFieldImpl extends StubBasedPsiElementBase<LuaDocTableFie
   @Override
   @NotNull
   public ITy guessParentType(@NotNull SearchContext context) {
-    return LuaDocPsiImplUtilKt.guessParentType(this, context);
+    return LuaDocPsiImplUtil.guessParentType(this, context);
   }
 
   @Override
   @NotNull
   public Visibility getVisibility() {
-    return LuaDocPsiImplUtilKt.getVisibility(this);
+    return LuaDocPsiImplUtil.getVisibility(this);
   }
 
   @Override
   public int getWorth() {
-    return LuaDocPsiImplUtilKt.getWorth(this);
+    return LuaDocPsiImplUtil.getWorth(this);
   }
 
   @Override
   @NotNull
   public PsiElement setName(@NotNull String newName) {
-    return LuaDocPsiImplUtilKt.setName(this, newName);
+    return LuaDocPsiImplUtil.setName(this, newName);
   }
 
   @Override
   @NotNull
   public String getName() {
-    return LuaDocPsiImplUtilKt.getName(this);
+    return LuaDocPsiImplUtil.getName(this);
   }
 
   @Override
   @Nullable
   public PsiElement getNameIdentifier() {
-    return LuaDocPsiImplUtilKt.getNameIdentifier(this);
+    return LuaDocPsiImplUtil.getNameIdentifier(this);
   }
 
   @Override
   @NotNull
   public ITy guessType(@NotNull SearchContext context) {
-    return LuaDocPsiImplUtilKt.guessType(this, context);
+    return LuaDocPsiImplUtil.guessType(this, context);
   }
 
   @Override
   public boolean isDeprecated() {
-    return LuaDocPsiImplUtilKt.isDeprecated(this);
+    return LuaDocPsiImplUtil.isDeprecated(this);
   }
 
 }

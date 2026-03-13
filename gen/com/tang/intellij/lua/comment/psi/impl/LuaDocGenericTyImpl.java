@@ -37,7 +37,7 @@ public class LuaDocGenericTyImpl extends LuaDocTyImpl implements LuaDocGenericTy
   @Override
   @NotNull
   public ITy getType() {
-    return LuaDocPsiImplUtilKt.getType(this);
+    return LuaDocPsiImplUtil.getType(this);
   }
 
 }

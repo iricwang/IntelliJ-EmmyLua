@@ -56,76 +56,76 @@ public class LuaTableFieldImpl extends StubBasedPsiElementBase<LuaTableFieldStub
   @Override
   @Nullable
   public PsiElement getNameIdentifier() {
-    return LuaPsiImplUtilKt.getNameIdentifier(this);
+    return LuaPsiImplUtil.getNameIdentifier(this);
   }
 
   @Override
   @NotNull
   public PsiElement setName(@NotNull String name) {
-    return LuaPsiImplUtilKt.setName(this, name);
+    return LuaPsiImplUtil.setName(this, name);
   }
 
   @Override
   @Nullable
   public String getName() {
-    return LuaPsiImplUtilKt.getName(this);
+    return LuaPsiImplUtil.getName(this);
   }
 
   @Override
   public int getTextOffset() {
-    return LuaPsiImplUtilKt.getTextOffset(this);
+    return LuaPsiImplUtil.getTextOffset(this);
   }
 
   @Override
   @NotNull
   public String toString() {
-    return LuaPsiImplUtilKt.toString(this);
+    return LuaPsiImplUtil.toString(this);
   }
 
   @Override
   @Nullable
   public String getFieldName() {
-    return LuaPsiImplUtilKt.getFieldName(this);
+    return LuaPsiImplUtil.getFieldName(this);
   }
 
   @Override
   @NotNull
   public ItemPresentation getPresentation() {
-    return LuaPsiImplUtilKt.getPresentation(this);
+    return LuaPsiImplUtil.getPresentation(this);
   }
 
   @Override
   @NotNull
   public ITy guessParentType(@NotNull SearchContext context) {
-    return LuaPsiImplUtilKt.guessParentType(this, context);
+    return LuaPsiImplUtil.guessParentType(this, context);
   }
 
   @Override
   @NotNull
   public Visibility getVisibility() {
-    return LuaPsiImplUtilKt.getVisibility(this);
+    return LuaPsiImplUtil.getVisibility(this);
   }
 
   @Override
   public int getWorth() {
-    return LuaPsiImplUtilKt.getWorth(this);
+    return LuaPsiImplUtil.getWorth(this);
   }
 
   @Override
   public boolean isDeprecated() {
-    return LuaPsiImplUtilKt.isDeprecated(this);
+    return LuaPsiImplUtil.isDeprecated(this);
   }
 
   @Override
   @Nullable
   public LuaComment getComment() {
-    return LuaPsiImplUtilKt.getComment(this);
+    return LuaPsiImplUtil.getComment(this);
   }
 
   @Override
   @Nullable
   public LuaExpr getIdExpr() {
-    return LuaPsiImplUtilKt.getIdExpr(this);
+    return LuaPsiImplUtil.getIdExpr(this);
   }
 
   @Override

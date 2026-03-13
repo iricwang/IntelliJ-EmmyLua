@@ -75,64 +75,64 @@ public class LuaDocTagFieldImpl extends StubBasedPsiElementBase<LuaDocTagFieldSt
   @Override
   @NotNull
   public ITy guessParentType(@NotNull SearchContext context) {
-    return LuaDocPsiImplUtilKt.guessParentType(this, context);
+    return LuaDocPsiImplUtil.guessParentType(this, context);
   }
 
   @Override
   @NotNull
   public Visibility getVisibility() {
-    return LuaDocPsiImplUtilKt.getVisibility(this);
+    return LuaDocPsiImplUtil.getVisibility(this);
   }
 
   @Override
   public int getWorth() {
-    return LuaDocPsiImplUtilKt.getWorth(this);
+    return LuaDocPsiImplUtil.getWorth(this);
   }
 
   @Override
   @Nullable
   public PsiElement getNameIdentifier() {
-    return LuaDocPsiImplUtilKt.getNameIdentifier(this);
+    return LuaDocPsiImplUtil.getNameIdentifier(this);
   }
 
   @Override
   @NotNull
   public PsiElement setName(@NotNull String newName) {
-    return LuaDocPsiImplUtilKt.setName(this, newName);
+    return LuaDocPsiImplUtil.setName(this, newName);
   }
 
   @Override
   @Nullable
   public String getName() {
-    return LuaDocPsiImplUtilKt.getName(this);
+    return LuaDocPsiImplUtil.getName(this);
   }
 
   @Override
   public int getTextOffset() {
-    return LuaDocPsiImplUtilKt.getTextOffset(this);
+    return LuaDocPsiImplUtil.getTextOffset(this);
   }
 
   @Override
   @Nullable
   public String getFieldName() {
-    return LuaDocPsiImplUtilKt.getFieldName(this);
+    return LuaDocPsiImplUtil.getFieldName(this);
   }
 
   @Override
   @NotNull
   public String toString() {
-    return LuaDocPsiImplUtilKt.toString(this);
+    return LuaDocPsiImplUtil.toString(this);
   }
 
   @Override
   @NotNull
   public ItemPresentation getPresentation() {
-    return LuaDocPsiImplUtilKt.getPresentation(this);
+    return LuaDocPsiImplUtil.getPresentation(this);
   }
 
   @Override
   public boolean isDeprecated() {
-    return LuaDocPsiImplUtilKt.isDeprecated(this);
+    return LuaDocPsiImplUtil.isDeprecated(this);
   }
 
 }

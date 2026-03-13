@@ -43,13 +43,13 @@ public class LuaDocTagReturnImpl extends ASTWrapperPsiElement implements LuaDocT
   @Override
   @NotNull
   public ITy resolveTypeAt(int index) {
-    return LuaDocPsiImplUtilKt.resolveTypeAt(this, index);
+    return LuaDocPsiImplUtil.resolveTypeAt(this, index);
   }
 
   @Override
   @NotNull
   public ITy getType() {
-    return LuaDocPsiImplUtilKt.getType(this);
+    return LuaDocPsiImplUtil.getType(this);
   }
 
 }

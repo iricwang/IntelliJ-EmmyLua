@@ -37,7 +37,7 @@ public class LuaDocTableTyImpl extends LuaDocTyImpl implements LuaDocTableTy {
   @Override
   @NotNull
   public ITy getType() {
-    return LuaDocPsiImplUtilKt.getType(this);
+    return LuaDocPsiImplUtil.getType(this);
   }
 
 }

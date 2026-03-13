@@ -49,7 +49,7 @@ public class LuaDocTagParamImpl extends ASTWrapperPsiElement implements LuaDocTa
   @Override
   @NotNull
   public ITy getType() {
-    return LuaDocPsiImplUtilKt.getType(this);
+    return LuaDocPsiImplUtil.getType(this);
   }
 
 }

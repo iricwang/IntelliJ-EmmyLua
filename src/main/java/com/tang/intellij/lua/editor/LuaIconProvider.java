@@ -13,41 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.tang.intellij.lua.editor;
 
-package com.tang.intellij.lua.psi;
-
-import com.tang.intellij.lua.search.SearchContext;
-import com.tang.intellij.lua.ty.ITy;
+import com.intellij.ide.IconProvider;
+import com.intellij.psi.PsiElement;
+import com.tang.intellij.lua.comment.psi.LuaDocTagClass;
+import com.tang.intellij.lua.lang.LuaIcons;
+import com.tang.intellij.lua.psi.LuaClassMethodDef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * #local function
- * #function
- * #lambda function
- * #class method
- *
- * Created by TangZX on 2016/12/9.
- */
-public interface LuaFuncBodyOwner extends LuaParametersOwner, LuaTypeGuessable {
+import javax.swing.*;
+
+public class LuaIconProvider extends IconProvider {
+
+    @Override
     @Nullable
-    LuaFuncBody getFuncBody();
-
-    /**
-     * 返回类型
-     */
-    @NotNull
-    ITy guessReturnType(SearchContext searchContext);
-
-    @Nullable
-    default ITy getVarargType() {
-        return LuaPsiImplUtil.getVarargTy(this);
-    }
-
-    @NotNull
-    LuaParamInfo[] getParams();
-
-    default String getParamSignature() {
-        return LuaPsiImplUtil.getParamSignature(this);
+    public Icon getIcon(@NotNull PsiElement psiElement, int iconFlags) {
+        if (psiElement instanceof LuaDocTagClass) return LuaIcons.CLASS;
+        else if (psiElement instanceof LuaClassMethodDef) return LuaIcons.CLASS_METHOD;
+        return null;
     }
 }
