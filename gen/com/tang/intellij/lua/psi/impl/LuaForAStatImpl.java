@@ -40,7 +40,7 @@ public class LuaForAStatImpl extends LuaStatementImpl implements LuaForAStat {
   @Override
   @NotNull
   public List<LuaParamNameDef> getParamNameDefList() {
-    return LuaPsiImplUtilKt.getParamNameDefList(this);
+    return LuaPsiImplUtil.getParamNameDefList(this);
   }
 
 }

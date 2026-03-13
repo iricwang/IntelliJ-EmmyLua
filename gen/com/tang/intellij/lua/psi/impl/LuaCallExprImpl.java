@@ -54,28 +54,28 @@ public class LuaCallExprImpl extends LuaCallExprMixin implements LuaCallExpr {
   @Override
   @NotNull
   public ITy guessParentType(@NotNull SearchContext context) {
-    return LuaPsiImplUtilKt.guessParentType(this, context);
+    return LuaPsiImplUtil.guessParentType(this, context);
   }
 
   @Override
   @Nullable
   public PsiElement getFirstStringArg() {
-    return LuaPsiImplUtilKt.getFirstStringArg(this);
+    return LuaPsiImplUtil.getFirstStringArg(this);
   }
 
   @Override
   public boolean isMethodDotCall() {
-    return LuaPsiImplUtilKt.isMethodDotCall(this);
+    return LuaPsiImplUtil.isMethodDotCall(this);
   }
 
   @Override
   public boolean isMethodColonCall() {
-    return LuaPsiImplUtilKt.isMethodColonCall(this);
+    return LuaPsiImplUtil.isMethodColonCall(this);
   }
 
   @Override
   public boolean isFunctionCall() {
-    return LuaPsiImplUtilKt.isFunctionCall(this);
+    return LuaPsiImplUtil.isFunctionCall(this);
   }
 
 }

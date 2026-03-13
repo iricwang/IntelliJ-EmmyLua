@@ -24,14 +24,14 @@
   psiImplClassSuffix="Impl"
   psiPackage="com.tang.intellij.lua.psi"
   psiImplPackage="com.tang.intellij.lua.psi.impl"
-  psiImplUtilClass="com.tang.intellij.lua.psi.LuaPsiImplUtilKt"
+  psiImplUtilClass="com.tang.intellij.lua.psi.LuaPsiImplUtil"
 
   parserUtilClass="com.tang.intellij.lua.psi.LuaParserUtil"
   elementTypeHolderClass="com.tang.intellij.lua.psi.LuaTypes"
   elementTypeClass="com.tang.intellij.lua.psi.LuaElementType"
-  elementTypeFactory="com.tang.intellij.lua.lang.LuaParserDefinitionKt.createType"
+  elementTypeFactory="com.tang.intellij.lua.lang.LuaParserDefinition.createType"
   tokenTypeClass="com.tang.intellij.lua.psi.LuaTokenType"
-  tokenTypeFactory="com.tang.intellij.lua.lang.LuaParserDefinitionKt.createToken"
+  tokenTypeFactory="com.tang.intellij.lua.lang.LuaParserDefinition.createToken"
   parserImports = "static com.intellij.lang.WhitespacesBinders.*"
 
   tokens = [

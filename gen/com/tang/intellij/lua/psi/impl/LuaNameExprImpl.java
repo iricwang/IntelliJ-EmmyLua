@@ -48,36 +48,36 @@ public class LuaNameExprImpl extends LuaNameExprMixin implements LuaNameExpr {
   @Override
   @NotNull
   public PsiElement setName(@NotNull String name) {
-    return LuaPsiImplUtilKt.setName(this, name);
+    return LuaPsiImplUtil.setName(this, name);
   }
 
   @Override
   @NotNull
   public String getName() {
-    return LuaPsiImplUtilKt.getName(this);
+    return LuaPsiImplUtil.getName(this);
   }
 
   @Override
   @NotNull
   public PsiElement getNameIdentifier() {
-    return LuaPsiImplUtilKt.getNameIdentifier(this);
+    return LuaPsiImplUtil.getNameIdentifier(this);
   }
 
   @Override
   @NotNull
   public ItemPresentation getPresentation() {
-    return LuaPsiImplUtilKt.getPresentation(this);
+    return LuaPsiImplUtil.getPresentation(this);
   }
 
   @Override
   @NotNull
   public PsiReference[] getReferences() {
-    return LuaPsiImplUtilKt.getReferences(this);
+    return LuaPsiImplUtil.getReferences(this);
   }
 
   @Override
   public boolean isDeprecated() {
-    return LuaPsiImplUtilKt.isDeprecated(this);
+    return LuaPsiImplUtil.isDeprecated(this);
   }
 
 }

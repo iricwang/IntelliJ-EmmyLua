@@ -48,7 +48,7 @@ public class LuaExprListImpl extends StubBasedPsiElementBase<LuaPlaceholderStub>
   @Override
   @NotNull
   public ITy guessTypeAt(@NotNull SearchContext context) {
-    return LuaPsiImplUtilKt.guessTypeAt(this, context);
+    return LuaPsiImplUtil.guessTypeAt(this, context);
   }
 
 }

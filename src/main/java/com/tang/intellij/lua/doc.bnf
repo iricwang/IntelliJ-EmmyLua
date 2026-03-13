@@ -24,12 +24,12 @@
   psiImplClassSuffix="Impl"
   psiPackage="com.tang.intellij.lua.comment.psi"
   psiImplPackage="com.tang.intellij.lua.comment.psi.impl"
-  psiImplUtilClass="com.tang.intellij.lua.comment.psi.LuaDocPsiImplUtilKt"
+  psiImplUtilClass="com.tang.intellij.lua.comment.psi.LuaDocPsiImplUtil"
 
   parserUtilClass="com.tang.intellij.lua.psi.LuaParserUtil"
   elementTypeHolderClass="com.tang.intellij.lua.comment.psi.LuaDocTypes"
   elementTypeClass="com.tang.intellij.lua.comment.psi.LuaDocElementType"
-  elementTypeFactory="com.tang.intellij.lua.lang.LuaParserDefinitionKt.createDocType"
+  elementTypeFactory="com.tang.intellij.lua.lang.LuaParserDefinition.createDocType"
   tokenTypeClass="com.tang.intellij.lua.comment.psi.LuaDocTokenType"
   extends(".*ty") = 'ty'
 

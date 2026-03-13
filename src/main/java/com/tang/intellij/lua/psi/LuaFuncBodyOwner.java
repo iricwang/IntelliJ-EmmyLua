@@ -41,13 +41,13 @@ public interface LuaFuncBodyOwner extends LuaParametersOwner, LuaTypeGuessable {
 
     @Nullable
     default ITy getVarargType() {
-        return LuaPsiImplUtilKt.getVarargTy(this);
+        return LuaPsiImplUtil.getVarargTy(this);
     }
 
     @NotNull
     LuaParamInfo[] getParams();
 
     default String getParamSignature() {
-        return LuaPsiImplUtilKt.getParamSignature(this);
+        return LuaPsiImplUtil.getParamSignature(this);
     }
 }

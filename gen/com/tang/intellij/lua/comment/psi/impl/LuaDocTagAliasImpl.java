@@ -54,30 +54,30 @@ public class LuaDocTagAliasImpl extends StubBasedPsiElementBase<LuaDocTagAliasSt
   @Override
   @Nullable
   public PsiElement getNameIdentifier() {
-    return LuaDocPsiImplUtilKt.getNameIdentifier(this);
+    return LuaDocPsiImplUtil.getNameIdentifier(this);
   }
 
   @Override
   @NotNull
   public PsiElement setName(@NotNull String newName) {
-    return LuaDocPsiImplUtilKt.setName(this, newName);
+    return LuaDocPsiImplUtil.setName(this, newName);
   }
 
   @Override
   @Nullable
   public String getName() {
-    return LuaDocPsiImplUtilKt.getName(this);
+    return LuaDocPsiImplUtil.getName(this);
   }
 
   @Override
   public int getTextOffset() {
-    return LuaDocPsiImplUtilKt.getTextOffset(this);
+    return LuaDocPsiImplUtil.getTextOffset(this);
   }
 
   @Override
   @NotNull
   public ITy getType() {
-    return LuaDocPsiImplUtilKt.getType(this);
+    return LuaDocPsiImplUtil.getType(this);
   }
 
 }

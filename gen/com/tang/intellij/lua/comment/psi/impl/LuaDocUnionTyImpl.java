@@ -37,7 +37,7 @@ public class LuaDocUnionTyImpl extends LuaDocTyImpl implements LuaDocUnionTy {
   @Override
   @NotNull
   public ITy getType() {
-    return LuaDocPsiImplUtilKt.getType(this);
+    return LuaDocPsiImplUtil.getType(this);
   }
 
 }

@@ -34,6 +34,6 @@ public interface LuaNameExpr extends LuaExpr, PsiNameIdentifierOwner, LuaExprStu
 
   //WARNING: toString(...) is skipped
   //matching toString(LuaNameExpr, ...)
-  //methods are not found in LuaPsiImplUtilKt
+  //methods are not found in LuaPsiImplUtil
 
 }

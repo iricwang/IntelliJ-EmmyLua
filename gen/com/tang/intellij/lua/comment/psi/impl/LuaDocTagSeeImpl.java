@@ -43,7 +43,7 @@ public class LuaDocTagSeeImpl extends ASTWrapperPsiElement implements LuaDocTagS
   @Override
   @Nullable
   public PsiReference getReference() {
-    return LuaDocPsiImplUtilKt.getReference(this);
+    return LuaDocPsiImplUtil.getReference(this);
   }
 
 }

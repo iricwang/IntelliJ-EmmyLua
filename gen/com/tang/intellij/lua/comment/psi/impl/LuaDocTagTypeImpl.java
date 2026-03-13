@@ -54,7 +54,7 @@ public class LuaDocTagTypeImpl extends StubBasedPsiElementBase<LuaDocTagTypeStub
   @Override
   @NotNull
   public ITy getType() {
-    return LuaDocPsiImplUtilKt.getType(this);
+    return LuaDocPsiImplUtil.getType(this);
   }
 
 }

@@ -53,7 +53,7 @@ public class LuaLocalDefImpl extends StubBasedPsiElementBase<LuaPlaceholderStub>
   @Override
   @Nullable
   public LuaComment getComment() {
-    return LuaPsiImplUtilKt.getComment(this);
+    return LuaPsiImplUtil.getComment(this);
   }
 
   @Override

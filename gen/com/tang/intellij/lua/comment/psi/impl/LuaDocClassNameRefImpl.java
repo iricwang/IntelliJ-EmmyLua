@@ -38,13 +38,13 @@ public class LuaDocClassNameRefImpl extends ASTWrapperPsiElement implements LuaD
   @Override
   @NotNull
   public PsiReference getReference() {
-    return LuaDocPsiImplUtilKt.getReference(this);
+    return LuaDocPsiImplUtil.getReference(this);
   }
 
   @Override
   @NotNull
   public ITy resolveType() {
-    return LuaDocPsiImplUtilKt.resolveType(this);
+    return LuaDocPsiImplUtil.resolveType(this);
   }
 
 }
