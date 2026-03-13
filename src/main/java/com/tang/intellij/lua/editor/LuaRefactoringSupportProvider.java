@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.tang.intellij.lua.editor;
 
-package com.tang.intellij.lua.editor
+import com.intellij.lang.refactoring.RefactoringSupportProvider;
+import com.intellij.psi.PsiElement;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import com.intellij.lang.refactoring.RefactoringSupportProvider
-import com.intellij.psi.PsiElement
+public class LuaRefactoringSupportProvider extends RefactoringSupportProvider {
 
-/**
- *
- * Created by TangZX on 2016/12/20.
- */
-class LuaRefactoringSupportProvider : RefactoringSupportProvider() {
-    override fun isMemberInplaceRenameAvailable(element: PsiElement, context: PsiElement?): Boolean {
-        return true
+    @Override
+    public boolean isMemberInplaceRenameAvailable(@NotNull PsiElement element, @Nullable PsiElement context) {
+        return true;
     }
 }
