@@ -44,9 +44,9 @@ data class BuildData(
 
 val buildDataList = listOf(
     BuildData(
-        ideaSDKShortVersion = "2026.1",
-        ideaSDKVersion = "2026.1",
-        sinceBuild = "253",
+        ideaSDKShortVersion = "2025.3",
+        ideaSDKVersion = "2025.3",
+        sinceBuild = "241",
         untilBuild = "261.*",
         bunch = "212",
         targetCompatibilityLevel = JavaVersion.VERSION_21,
@@ -164,9 +164,11 @@ project(":") {
         implementation("org.luaj:luaj-jse:3.0.1")
         implementation("org.eclipse.mylyn.github:org.eclipse.egit.github.core:2.1.5")
         implementation("com.jgoodies:forms:1.2.1")
+        testImplementation("junit:junit:4.13.2")
         intellijPlatform {
             intellijIdeaUltimate(buildVersionData.ideaSDKVersion)
             bundledModule("intellij.spellchecker")
+            testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
         }
     }
 
@@ -209,6 +211,12 @@ project(":") {
         sourceCompatibility = buildVersionData.targetCompatibilityLevel
         targetCompatibility = buildVersionData.targetCompatibilityLevel
     }*/
+
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(buildVersionData.jvmTarget.toInt()))
+        }
+    }
 
     intellijPlatform {
         version = version
@@ -258,6 +266,11 @@ project(":") {
             compilerOptions {
                 jvmTarget.set(JvmTarget.fromTarget(buildVersionData.jvmTarget))
             }
+        }
+
+        compileJava {
+            sourceCompatibility = buildVersionData.targetCompatibilityLevel.toString()
+            targetCompatibility = buildVersionData.targetCompatibilityLevel.toString()
         }
 
         patchPluginXml {
