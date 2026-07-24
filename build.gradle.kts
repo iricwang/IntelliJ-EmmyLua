@@ -24,6 +24,7 @@ plugins {
     id("org.jetbrains.intellij.platform") version "2.7.0"
     id("org.jetbrains.kotlin.jvm").version("2.3.0")
     id("de.undercouch.download").version("5.3.0")
+    id("org.jetbrains.grammarkit") version "2022.3.2.2"
 }
 
 data class BuildData(
@@ -174,6 +175,33 @@ project(":") {
             java.srcDirs("gen", "src/main/compat")
             resources.exclude("debugger/**")
             resources.exclude("std/**")
+        }
+    }
+
+    grammarKit {
+        jflexRelease.set("1.9.2")
+    }
+
+    // doc 词法再生成（./gradlew generateLexer 可直接用）。
+    // purgeOldFiles 关闭，避免清掉 gen/ 下其它语法生成物。
+    tasks.generateLexer {
+        sourceFile.set(file("src/main/java/com/tang/intellij/lua/doc.flex"))
+        targetOutputDir.set(file("gen/com/tang/intellij/lua/comment/lexer"))
+        purgeOldFiles.set(false)
+    }
+
+    // doc 语法（parser/PSI）再生成不走 gradle 任务：grammarkit 插件的 generateParser
+    // 无法凑齐平台依赖（KeyedExtensionCollector 等），用手工命令（需 JDK21+ 与本机 IDE 发行版）：
+    //   java -cp "<grammar-kit-2023.3.jar>;<ideaIU>/lib/*;<repo>/build/classes/kotlin/main"     //        org.intellij.grammar.Main gen "src\main\java\com	ang\intellij\lua\doc.bnf"
+    // 注意：build/classes/kotlin/main 必须在 classpath 里（GK 据此提取 LuaDocPsiImplUtilKt
+    // 的方法签名），且需先能编译通过——新增 bnf 方法时先用顶层函数兜住编译，生成后接口才有该方法。
+
+    // 沙箱 IDE 运行时会映射锁定 .intellijPlatform/coroutines-javaagent.jar，
+    // 导致 prepareTest 无法读取；存在副本时改用副本。
+    tasks.withType<org.jetbrains.intellij.platform.gradle.tasks.PrepareTestTask>().configureEach {
+        val agentCopy = file("build/coroutines-javaagent-copy.jar")
+        if (agentCopy.exists()) {
+            coroutinesJavaAgentFile.set(agentCopy)
         }
     }
 

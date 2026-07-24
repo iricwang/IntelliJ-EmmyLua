@@ -24,7 +24,7 @@ import com.intellij.lang.Language;
  */
 public class LuaLanguage extends Language {
 
-    public static final int INDEX_VERSION = 40;
+    public static final int INDEX_VERSION = 42; // 42: @class 多重继承（stub 改父类列表）；41: @param/@field 支持 name? 可空标记
 
     public static final LuaLanguage INSTANCE = new LuaLanguage();
 

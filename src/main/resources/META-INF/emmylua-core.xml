@@ -34,6 +34,11 @@
         <library.type implementation="com.tang.intellij.lua.project.LuaLibraryType"/>
         <!--<indexedRootsProvider implementation="com.tang.intellij.lua.project.LuaPredefinedLibraryProvider"/>-->
         <additionalLibraryRootsProvider implementation="com.tang.intellij.lua.project.StdLibraryProvider"/>
+        <additionalLibraryRootsProvider implementation="com.tang.intellij.lua.xml.LuaXmlLibraryProvider"/>
+        <additionalLibraryRootsProvider implementation="com.tang.intellij.lua.ue.LuaUEBlueprintLibraryProvider"/>
+        <postStartupActivity implementation="com.tang.intellij.lua.xml.LuaXmlStartupActivity"/>
+        <postStartupActivity implementation="com.tang.intellij.lua.ue.LuaUEBlueprintStartupActivity"/>
+        <httpRequestHandler implementation="com.tang.intellij.lua.ue.LuaUEBlueprintHttpHandler"/>
         <directoryProjectGenerator implementation="com.tang.intellij.lua.project.EmmyLuaDirectoryProjectGenerator"/>
 
         <!--lang-->
@@ -159,6 +164,20 @@
                           displayName="Emmy Completion"
                           id="preferences.Lua.Completion"/>-->
         </applicationConfigurable>
+
+        <!--lua xml defs (独立设置页 + 项目级配置服务)-->
+        <projectConfigurable groupId="language"
+                             parentId="preferences.Lua"
+                             id="preferences.Lua.XmlDefs"
+                             displayName="Lua XML Defs"
+                             instance="com.tang.intellij.lua.xml.LuaXmlConfigurable"/>
+
+        <!--lua ue blueprint defs (引擎推送的界面蓝图注解)-->
+        <projectConfigurable groupId="language"
+                             parentId="preferences.Lua"
+                             id="preferences.Lua.UEBlueprintDefs"
+                             displayName="Lua UE Blueprint Defs"
+                             instance="com.tang.intellij.lua.ue.LuaUEBlueprintConfigurable"/>
 
         <!--intentions-->
         <intentionAction>

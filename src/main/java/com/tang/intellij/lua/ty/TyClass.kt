@@ -35,7 +35,12 @@ import com.tang.intellij.lua.search.SearchContext
 interface ITyClass : ITy {
     val className: String
     val varName: String
+    /** All direct parent class names (multiple inheritance). */
+    val superClassNames: List<String>
+    /** First parent class name, kept for backwards compatibility. */
     var superClassName: String?
+    /** Interfaces this class explicitly implements via @implements. */
+    val implementsClassNames: List<String>
     var aliasName: String?
     fun processAlias(processor: Processor<String>): Boolean
     fun lazyInit(searchContext: SearchContext)
@@ -74,8 +79,24 @@ fun ITyClass.isVisibleInScope(project: Project, contextTy: ITy, visibility: Visi
 
 abstract class TyClass(override val className: String,
                        override val varName: String = "",
-                       override var superClassName: String? = null
+                       superClassNames: List<String> = emptyList(),
+                       implementsClassNames: List<String> = emptyList()
 ) : Ty(TyKind.Class), ITyClass {
+
+    // Internal mutable storage for all parent class names.
+    private val _superClassNames: MutableList<String> = superClassNames.toMutableList()
+    private val _implementsClassNames: MutableList<String> = implementsClassNames.toMutableList()
+
+    override val superClassNames: List<String> get() = _superClassNames
+    override val implementsClassNames: List<String> get() = _implementsClassNames
+
+    /** First parent class name; setting replaces the entire parent list with a single entry. */
+    override var superClassName: String?
+        get() = _superClassNames.firstOrNull()
+        set(value) {
+            _superClassNames.clear()
+            if (value != null) _superClassNames.add(value)
+        }
 
     final override var aliasName: String? = null
 
@@ -101,9 +122,16 @@ abstract class TyClass(override val className: String,
     }
 
     override fun getMemberChain(context: SearchContext): ClassMemberChain {
-        val superClazz = getSuperClass(context) as? ITyClass
-        val chain = ClassMemberChain(this, superClazz?.getMemberChain(context))
+        lazyInit(context)
         val manager = LuaShortNamesManager.getInstance(context.project)
+        // Build chains for all parents (superclass + implements interfaces)
+        val allParentNames = (superClassNames + implementsClassNames).distinct()
+        val superChains = allParentNames.mapNotNull { clsName ->
+            if (clsName == className) null
+            else (Ty.getBuiltin(clsName) ?: manager.findClass(clsName, context)?.type) as? ITyClass
+        }.map { it.getMemberChain(context) }
+
+        val chain = ClassMemberChain(this, superChains)
         val members = manager.getClassMembers(className, context)
         members.forEach { chain.add(it) }
 
@@ -147,13 +175,16 @@ abstract class TyClass(override val className: String,
         if (classDef != null && aliasName == null) {
             val tyClass = classDef.type
             aliasName = tyClass.aliasName
-            superClassName = tyClass.superClassName
+            _superClassNames.clear()
+            _superClassNames.addAll(tyClass.superClassNames)
+            _implementsClassNames.clear()
+            _implementsClassNames.addAll(tyClass.implementsClassNames)
         }
     }
 
     override fun getSuperClass(context: SearchContext): ITy? {
         lazyInit(context)
-        val clsName = superClassName
+        val clsName = superClassNames.firstOrNull()
         if (clsName != null && clsName != className) {
             return Ty.getBuiltin(clsName) ?: LuaShortNamesManager.getInstance(context.project).findClass(clsName, context)?.type
         }
@@ -165,13 +196,18 @@ abstract class TyClass(override val className: String,
         if (other == Ty.TABLE) return true
         if (super.subTypeOf(other, context, strict)) return true
 
-        // Lazy init for superclass
         this.doLazyInit(context)
-        // Check if any of the superclasses are type
+        // Check if any of the superclasses or implemented interfaces match
         var isSubType = false
         processSuperClass(this, context) { superType ->
             isSubType = superType == other
             !isSubType
+        }
+        if (!isSubType) {
+            processImplements(this, context) { iface ->
+                isSubType = iface == other
+                !isSubType
+            }
         }
         return isSubType
     }
@@ -222,31 +258,50 @@ abstract class TyClass(override val className: String,
         }
 
         fun processSuperClass(start: ITyClass, searchContext: SearchContext, processor: (ITyClass) -> Boolean): Boolean {
-            val processedName = mutableSetOf<String>()
-            var cur: ITy? = start
-            while (cur != null) {
-                val cls = cur.getSuperClass(searchContext)
-                if (cls is ITyClass) {
-                    if (!processedName.add(cls.className)) {
-                        // todo: Infinite inheritance
-                        return false
-                    }
-                    if (!processor(cls))
-                        return false
-                }
-                cur = cls
+            val processedNames = mutableSetOf<String>()
+            processedNames.add(start.className)
+            val queue = ArrayDeque<String>()
+            start.lazyInit(searchContext)
+            queue.addAll(start.superClassNames)
+
+            val manager = LuaShortNamesManager.getInstance(searchContext.project)
+            while (queue.isNotEmpty()) {
+                val clsName = queue.removeFirst()
+                if (!processedNames.add(clsName)) continue  // cycle guard
+
+                val cls = (Ty.getBuiltin(clsName) ?: manager.findClass(clsName, searchContext)?.type) as? ITyClass
+                    ?: continue
+
+                if (!processor(cls)) return false
+                cls.lazyInit(searchContext)
+                queue.addAll(cls.superClassNames)
+            }
+            return true
+        }
+
+        /** Traverses the direct implements list (BFS, one level). */
+        fun processImplements(start: ITyClass, searchContext: SearchContext, processor: (ITyClass) -> Boolean): Boolean {
+            start.lazyInit(searchContext)
+            val manager = LuaShortNamesManager.getInstance(searchContext.project)
+            for (ifaceName in start.implementsClassNames) {
+                val iface = (Ty.getBuiltin(ifaceName) ?: manager.findClass(ifaceName, searchContext)?.type) as? ITyClass
+                    ?: continue
+                if (!processor(iface)) return false
+                // Also traverse the interface's own inheritance
+                if (!processSuperClass(iface, searchContext, processor)) return false
             }
             return true
         }
     }
 }
 
-class TyPsiDocClass(tagClass: LuaDocTagClass) : TyClass(tagClass.name) {
+class TyPsiDocClass(tagClass: LuaDocTagClass) : TyClass(
+    tagClass.name,
+    superClassNames = tagClass.superClassNameRefList.map { it.text },
+    implementsClassNames = tagClass.implementsNamesFromComment()
+) {
 
     init {
-        val supperRef = tagClass.superClassNameRef
-        if (supperRef != null)
-            superClassName = supperRef.text
         aliasName = tagClass.aliasName
     }
 
@@ -255,10 +310,11 @@ class TyPsiDocClass(tagClass: LuaDocTagClass) : TyClass(tagClass.name) {
 
 open class TySerializedClass(name: String,
                              varName: String = name,
-                             supper: String? = null,
+                             superClassNames: List<String> = emptyList(),
                              alias: String? = null,
-                             flags: Int = 0)
-    : TyClass(name, varName, supper) {
+                             flags: Int = 0,
+                             implementsClassNames: List<String> = emptyList())
+    : TyClass(name, varName, superClassNames, implementsClassNames) {
     init {
         aliasName = alias
         this.flags = flags
@@ -277,9 +333,10 @@ class TyLazyClass(name: String) : TySerializedClass(name)
 
 fun createSerializedClass(name: String,
                           varName: String = name,
-                          supper: String? = null,
+                          superClassNames: List<String> = emptyList(),
                           alias: String? = null,
-                          flags: Int = 0): TyClass {
+                          flags: Int = 0,
+                          implementsClassNames: List<String> = emptyList()): TyClass {
     val list = name.split("|")
     if (list.size == 3) {
         val type = list[0].toInt()
@@ -288,7 +345,16 @@ fun createSerializedClass(name: String,
         }
     }
 
-    return TySerializedClass(name, varName, supper, alias, flags)
+    return TySerializedClass(name, varName, superClassNames, alias, flags, implementsClassNames)
+}
+
+/** Backward-compatible overload that accepts a single nullable super class name. */
+fun createSerializedClass(name: String,
+                          varName: String = name,
+                          supper: String? = null,
+                          alias: String? = null,
+                          flags: Int = 0): TyClass {
+    return createSerializedClass(name, varName, listOfNotNull(supper), alias, flags)
 }
 
 private val PsiFile.uid: String get() {
@@ -372,21 +438,25 @@ class TySerializedDocTable(name: String) : TySerializedClass(name) {
 
 object TyClassSerializer : TySerializer<ITyClass>() {
     override fun deserializeTy(flags: Int, stream: StubInputStream): ITyClass {
-        val className = stream.readName()
-        val varName = stream.readName()
-        val superName = stream.readName()
-        val aliasName = stream.readName()
-        return createSerializedClass(StringRef.toString(className),
-                StringRef.toString(varName),
-                StringRef.toString(superName),
-                StringRef.toString(aliasName),
-                flags)
+        val className = StringRef.toString(stream.readName())!!
+        val varName = StringRef.toString(stream.readName())!!
+        val aliasName = StringRef.toString(stream.readName())
+        val superCount = stream.readVarInt()
+        val superClassNames = (0 until superCount).mapNotNull { StringRef.toString(stream.readName()) }
+        val implCount = stream.readVarInt()
+        val implementsClassNames = (0 until implCount).mapNotNull { StringRef.toString(stream.readName()) }
+        return createSerializedClass(className, varName, superClassNames, aliasName, flags, implementsClassNames)
     }
 
     override fun serializeTy(ty: ITyClass, stream: StubOutputStream) {
         stream.writeName(ty.className)
         stream.writeName(ty.varName)
-        stream.writeName(ty.superClassName)
         stream.writeName(ty.aliasName)
+        val superNames = ty.superClassNames
+        stream.writeVarInt(superNames.size)
+        superNames.forEach { stream.writeName(it) }
+        val implNames = ty.implementsClassNames
+        stream.writeVarInt(implNames.size)
+        implNames.forEach { stream.writeName(it) }
     }
 }

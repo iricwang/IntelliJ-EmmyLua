@@ -27,5 +27,6 @@ object StubKeys {
     val SHORT_NAME = StubIndexKey.createIndexKey<String, NavigatablePsiElement>("lua.index.short_name")
     val CLASS = StubIndexKey.createIndexKey<String, LuaDocTagClass>("lua.index.class")
     val SUPER_CLASS = StubIndexKey.createIndexKey<String, LuaDocTagClass>("lua.index.super_class")
+    val IMPLEMENTS_CLASS = StubIndexKey.createIndexKey<String, LuaDocTagClass>("lua.index.implements_class")
     val ALIAS = StubIndexKey.createIndexKey<String, LuaDocTagAlias>("lua.index.alias")
 }

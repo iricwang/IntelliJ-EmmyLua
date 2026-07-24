@@ -51,6 +51,7 @@
         ARR = '[]'
         FUN = 'fun'
         VARARG = 'vararg'
+        QUESTION = '?'
         PRIVATE = 'private'
         PROTECTED = 'protected'
         PUBLIC = 'public'
@@ -176,7 +177,7 @@ union_ty ::= ty ('|' ty)+ {
 }
 access_modifier ::= PRIVATE | PUBLIC | PROTECTED | TAG_NAME_PRIVATE | TAG_NAME_PUBLIC | TAG_NAME_PROTECTED
 
-tag_field ::= TAG_NAME_FIELD access_modifier? ('<' class_name_ref '>')? ID ty comment_string? {
+tag_field ::= TAG_NAME_FIELD access_modifier? ('<' class_name_ref '>')? ID QUESTION? ty comment_string? {
     pin = 1
     implements = [
         "com.tang.intellij.lua.psi.LuaClassField"
@@ -193,6 +194,7 @@ tag_field ::= TAG_NAME_FIELD access_modifier? ('<' class_name_ref '>')? ID ty co
         getName
         getTextOffset
         getFieldName
+        isNullable
         toString
         getPresentation
         isDeprecated
@@ -219,8 +221,8 @@ tag_lan ::= TAG_NAME_LANGUAGE lan_id comment_string? {
 }
 
 //@param PARAM_NAME CLASS_REF
-param_name_ref ::= ID {
-    methods = [getReference]
+param_name_ref ::= ID QUESTION? {
+    methods = [getReference isNullable]
 }
 tag_param ::= TAG_NAME_PARAM param_name_ref ty comment_string? {
     pin = 1
@@ -241,7 +243,9 @@ tag_return ::= TAG_NAME_RETURN type_list comment_string? {
 class_name_ref ::= ID {
     methods = [getReference resolveType]
 }
-tag_class ::= (TAG_NAME_CLASS|TAG_NAME_MODULE) ID (EXTENDS class_name_ref)? comment_string? {
+// Multiple inheritance: ---@class Child : Parent1, Parent2
+private super_class_list ::= class_name_ref (',' class_name_ref)*
+tag_class ::= (TAG_NAME_CLASS|TAG_NAME_MODULE) ID (EXTENDS super_class_list)? comment_string? {
     pin = 2
     implements = [
         "com.tang.intellij.lua.comment.psi.LuaDocPsiElement"
@@ -260,7 +264,7 @@ tag_class ::= (TAG_NAME_CLASS|TAG_NAME_MODULE) ID (EXTENDS class_name_ref)? comm
         toString
         isDeprecated
 
-        superClassNameRef = 'class_name_ref'
+        superClassNameRefList = 'class_name_ref'
         module = 'TAG_NAME_MODULE'
     ]
 }

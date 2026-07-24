@@ -24,7 +24,7 @@ import com.tang.intellij.lua.comment.psi.LuaDocTy
 import com.tang.intellij.lua.psi.LuaClassMember
 import com.tang.intellij.lua.search.SearchContext
 
-class TyParameter(val name:String, base: String? = null) : TySerializedClass(name, name, base) {
+class TyParameter(val name:String, base: String? = null) : TySerializedClass(name, name, listOfNotNull(base)) {
 
     override val kind: TyKind
         get() = TyKind.GenericParam

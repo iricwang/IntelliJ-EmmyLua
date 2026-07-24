@@ -80,7 +80,9 @@ class LuaCommentImpl(node: ASTNode) : ASTWrapperPsiElement(node), LuaComment {
         while (element != null) {
             if (element is LuaDocTagParam) {
                 val nameRef = element.paramNameRef
-                if (nameRef != null && nameRef.text == name)
+                // 参数名取 ID 子节点：可空标记 name? 的 QUESTION 也在 param_name_ref 节点内，
+                // 直接用 nameRef.text 会把 '?' 带上导致匹配失败。
+                if (nameRef != null && nameRef.id?.text == name)
                     return element
             }
             element = element.nextSibling

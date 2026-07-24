@@ -22,6 +22,8 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.tang.intellij.lua.Constants
 import com.tang.intellij.lua.comment.LuaCommentUtil
 import com.tang.intellij.lua.comment.psi.LuaDocTagField
+import com.tang.intellij.lua.comment.psi.isNullable
+import com.tang.intellij.lua.comment.psi.nilableIf
 import com.tang.intellij.lua.comment.psi.LuaDocTagReturn
 import com.tang.intellij.lua.ext.recursionGuard
 import com.tang.intellij.lua.ext.stubOrPsiParent
@@ -155,7 +157,7 @@ private fun LuaDocTagField.infer(): ITy {
     val stub = stub
     if (stub != null)
         return stub.type
-    return ty?.getType() ?: Ty.UNKNOWN
+    return ty?.getType().nilableIf(isNullable(this))
 }
 
 @Suppress("UNUSED_PARAMETER")

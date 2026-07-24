@@ -25,6 +25,8 @@ import com.intellij.util.BitUtil
 import com.intellij.util.io.StringRef
 import com.tang.intellij.lua.comment.LuaCommentUtil
 import com.tang.intellij.lua.comment.psi.LuaDocTagField
+import com.tang.intellij.lua.comment.psi.isNullable
+import com.tang.intellij.lua.comment.psi.nilableIf
 import com.tang.intellij.lua.comment.psi.impl.LuaDocTagFieldImpl
 import com.tang.intellij.lua.psi.LuaElementType
 import com.tang.intellij.lua.psi.Visibility
@@ -73,7 +75,7 @@ class LuaDocTagFieldType : LuaStubElementType<LuaDocTagFieldStub, LuaDocTagField
                 flags,
                 name,
                 className,
-                tagField.ty?.getType() ?: Ty.UNKNOWN)
+                tagField.ty?.getType().nilableIf(isNullable(tagField)))
     }
 
     override fun serialize(stub: LuaDocTagFieldStub, stubOutputStream: StubOutputStream) {

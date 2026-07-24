@@ -159,6 +159,7 @@ SINGLE_QUOTED_STRING='([^\\\']|\\\S|\\[\r\n])*'?    //'([^\\'\r\n]|\\[^\r\n])*'?
 
 <xTYPE_REF> {
     "@"                        { yybegin(xCOMMENT_STRING); return STRING_BEGIN; }
+    "?"                        { return QUESTION; }
     ","                        { _typeReq = true; return COMMA; }
     "|"                        { _typeReq = true; return OR; }
     ":"                        { _typeReq = true; return EXTENDS;}

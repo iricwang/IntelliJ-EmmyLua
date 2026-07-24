@@ -18,12 +18,20 @@ package com.tang.intellij.lua.ty
 
 import com.tang.intellij.lua.psi.LuaClassMember
 
-class ClassMemberChain(val ty: ITyClass, var superChain: ClassMemberChain?) {
+/**
+ * Holds the members declared directly on [ty] and chains to zero or more
+ * super-class chains (supporting multiple inheritance).
+ */
+class ClassMemberChain(val ty: ITyClass, val superChains: List<ClassMemberChain>) {
+
+    /** Convenience accessor for single-inheritance code paths. */
+    val superChain: ClassMemberChain? get() = superChains.firstOrNull()
+
     private val members = mutableMapOf<String, LuaClassMember>()
 
     fun add(member: LuaClassMember) {
         val name = member.name ?: return
-        val superExist = superChain?.findMember(name)
+        val superExist = findSuperMember(name)
         val override = superExist == null || canOverride(member, superExist)
         if (override) {
             val selfExist = members[name]
@@ -32,24 +40,35 @@ class ClassMemberChain(val ty: ITyClass, var superChain: ClassMemberChain?) {
         }
     }
 
-    fun findMember(name: String): LuaClassMember? {
-        return members.getOrElse(name) { superChain?.findMember(name) }
+    /** Finds [name] in any of the super chains (first-parent wins). */
+    private fun findSuperMember(name: String): LuaClassMember? {
+        for (chain in superChains) {
+            val m = chain.findMember(name)
+            if (m != null) return m
+        }
+        return null
     }
 
-    private fun process(deep: Boolean, processor: (ITyClass, String, LuaClassMember) -> Unit) {
-        for ((t, u) in members) {
-            processor(ty, t, u)
+    fun findMember(name: String): LuaClassMember? {
+        return members[name] ?: findSuperMember(name)
+    }
+
+    private fun processInternal(deep: Boolean, cache: MutableSet<String>, processor: (ITyClass, LuaClassMember) -> Unit) {
+        for ((name, member) in members) {
+            if (cache.add(name)) {
+                processor(ty, member)
+            }
         }
-        if (deep)
-            superChain?.process(deep, processor)
+        if (deep) {
+            for (chain in superChains) {
+                chain.processInternal(deep, cache, processor)
+            }
+        }
     }
 
     fun process(deep: Boolean, processor: (ITyClass, LuaClassMember) -> Unit) {
         val cache = mutableSetOf<String>()
-        process(deep) { clazz, name, member ->
-            if (cache.add(name))
-                processor(clazz, member)
-        }
+        processInternal(deep, cache, processor)
     }
 
     private fun canOverride(member: LuaClassMember, superMember: LuaClassMember): Boolean {

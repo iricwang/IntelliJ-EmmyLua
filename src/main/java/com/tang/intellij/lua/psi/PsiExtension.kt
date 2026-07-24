@@ -367,6 +367,20 @@ val LuaDocTagClass.aliasName: String? get() {
     return null
 }
 
+/**
+ * Parses @implements tags from the parent doc comment of this @class tag.
+ * Usage: ---@implements Interface1, Interface2
+ */
+fun LuaDocTagClass.implementsNamesFromComment(): List<String> {
+    val comment = com.intellij.psi.util.PsiTreeUtil.getParentOfType(
+        this, com.tang.intellij.lua.comment.psi.api.LuaComment::class.java
+    ) ?: return emptyList()
+    return comment.findTags("implements").flatMap { tagDef ->
+        val text = tagDef.commentString?.string?.text ?: ""
+        text.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    }
+}
+
 val LuaIndexExpr.brack: Boolean get() {
     val stub = stub
     return stub?.brack ?: (lbrack != null)

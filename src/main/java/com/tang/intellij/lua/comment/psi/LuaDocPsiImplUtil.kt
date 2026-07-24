@@ -27,6 +27,8 @@ import com.intellij.psi.StubBasedPsiElement
 import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.util.PsiTreeUtil
 import com.tang.intellij.lua.comment.LuaCommentUtil
+import com.tang.intellij.lua.comment.psi.LuaDocParamNameRef
+import com.tang.intellij.lua.comment.psi.LuaDocTypes
 import com.tang.intellij.lua.comment.reference.LuaClassNameReference
 import com.tang.intellij.lua.comment.reference.LuaDocParamNameReference
 import com.tang.intellij.lua.comment.reference.LuaDocSeeReference
@@ -85,8 +87,24 @@ fun guessType(tagField: LuaDocTagField, context: SearchContext): ITy {
     val stub = tagField.stub
     if (stub != null)
         return stub.type
-    return tagField.ty?.getType() ?: Ty.UNKNOWN
+    return tagField.ty?.getType().nilableIf(isNullable(tagField))
 }
+
+/**
+ * `name? T` 可空标记（LuaLS 风格）：nullable 为 true 时把类型包成 T|nil。
+ * 注意不能用 Ty.union——其构造把 TyNil 视为 invalid 直接丢弃（EmmyLua 语义里
+ * nil 默认全局可赋值，见 LuaSettings.isNilStrict），必须手工 append 保留 nil 成员，
+ * 这样严格 nil 检查下注解才生效，且 hover/文档可见 `T|nil`。
+ */
+fun ITy?.nilableIf(nullable: Boolean): ITy =
+    if (this == null) Ty.UNKNOWN else if (!nullable) this else TyUnion().append(this).append(Ty.NIL)
+
+/** param_name_ref / tag_field 是否带 `?` 可空标记。 */
+fun isNullable(paramNameRef: LuaDocParamNameRef): Boolean =
+    paramNameRef.node.findChildByType(LuaDocTypes.QUESTION) != null
+
+fun isNullable(tagField: LuaDocTagField): Boolean =
+    tagField.node.findChildByType(LuaDocTypes.QUESTION) != null
 
 fun guessParentType(tagField: LuaDocTagField, context: SearchContext): ITy {
     val parent = tagField.parent
@@ -110,13 +128,14 @@ fun getVisibility(tagField: LuaDocTagField): Visibility {
  * @return 类型集合
  */
 fun getType(tagParamDec: LuaDocTagParam): ITy {
+    val nullable = tagParamDec.paramNameRef?.let { isNullable(it) } ?: false
     val type = tagParamDec.ty?.getType()
     if (type != null) {
         val substitutor = LuaCommentUtil.findContainer(tagParamDec).createSubstitutor()
         if (substitutor != null)
-            return type.substitute(substitutor)
+            return type.substitute(substitutor).nilableIf(nullable)
     }
-    return type ?: Ty.UNKNOWN
+    return type.nilableIf(nullable)
 }
 
 fun getType(vararg: LuaDocTagVararg): ITy {
@@ -209,6 +228,9 @@ fun getType(tagType: LuaDocTagType): ITy {
 }
 
 @Suppress("UNUSED_PARAMETER")
+fun toString(tagClass: LuaDocTagClass): String = toString(tagClass as StubBasedPsiElement<out StubElement<*>>)
+fun toString(tagField: LuaDocTagField): String = toString(tagField as StubBasedPsiElement<out StubElement<*>>)
+
 fun toString(stubElement: StubBasedPsiElement<out StubElement<*>>): String {
     return "[STUB]"// + stubElement.getNode().getElementType().toString();
 }
@@ -309,6 +331,10 @@ fun getVisibility(f: LuaDocTableField): Visibility {
 
 fun getWorth(m: LuaClassMember): Int = LuaClassMember.WORTH_DOC
 
+// 以下重载为 Grammar-Kit 提供精确签名（重新生成 PSI 接口/实现时按参数精确类型匹配）：
+fun getWorth(m: LuaDocTableField): Int = getWorth(m as LuaClassMember)
+fun getWorth(m: LuaDocTagField): Int = getWorth(m as LuaClassMember)
+
 fun getNameIdentifier(f: LuaDocTableField): PsiElement? {
     return f.id
 }
@@ -327,6 +353,9 @@ fun guessType(f:LuaDocTableField, context: SearchContext): ITy {
 fun getNameIdentifier(g: LuaDocGenericDef): PsiElement? {
     return g.id
 }
+
+fun isDeprecated(m: LuaDocTableField): Boolean = isDeprecated(m as LuaClassMember)
+fun isDeprecated(m: LuaDocTagField): Boolean = isDeprecated(m as LuaClassMember)
 
 fun isDeprecated(member: LuaClassMember): Boolean {
     return false

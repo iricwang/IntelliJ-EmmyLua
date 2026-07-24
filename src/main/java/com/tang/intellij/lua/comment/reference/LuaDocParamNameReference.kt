@@ -31,7 +31,10 @@ import com.tang.intellij.lua.psi.*
 class LuaDocParamNameReference(element: LuaDocParamNameRef) : PsiReferenceBase<LuaDocParamNameRef>(element) {
 
     override fun getRangeInElement(): TextRange {
-        return TextRange(0, myElement.textLength)
+        // 可空标记 name? 时只把 ID 部分作为引用范围（不把 '?' 纳入导航/重命名）。
+        val id = myElement.id
+        return if (id != null) TextRange.from(id.startOffsetInParent, id.textLength)
+        else TextRange(0, myElement.textLength)
     }
 
     override fun isReferenceTo(element: PsiElement): Boolean {
@@ -49,7 +52,8 @@ class LuaDocParamNameReference(element: LuaDocParamNameRef) : PsiReferenceBase<L
         val owner = LuaCommentUtil.findOwner(myElement)
 
         if (owner != null) {
-            val name = myElement.text
+            // 参数名取 ID 子节点：可空标记 name? 的 QUESTION 也在 param_name_ref 节点内。
+            val name = myElement.id?.text ?: myElement.text
             var target:PsiElement? = null
             owner.accept(object :LuaVisitor() {
                 override fun visitPsiElement(o: LuaPsiElement) {
