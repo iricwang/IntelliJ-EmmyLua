@@ -35,8 +35,7 @@ public class LuaDocParTyImpl extends LuaDocTyImpl implements LuaDocParTy {
   }
 
   @Override
-  @NotNull
-  public ITy getType() {
+  public @NotNull ITy getType() {
     return LuaDocPsiImplUtilKt.getType(this);
   }
 

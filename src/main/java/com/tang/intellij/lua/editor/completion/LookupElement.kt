@@ -19,13 +19,16 @@
 package com.tang.intellij.lua.editor.completion
 
 import com.intellij.codeInsight.lookup.LookupElementPresentation
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
+import com.intellij.ui.JBColor
 import com.tang.intellij.lua.Constants
 import com.tang.intellij.lua.lang.LuaIcons
 import com.tang.intellij.lua.psi.LuaClassField
 import com.tang.intellij.lua.psi.LuaPsiElement
 import com.tang.intellij.lua.search.SearchContext
 import com.tang.intellij.lua.ty.*
+import java.awt.Color
 import javax.swing.Icon
 
 interface LuaDocumentationLookupElement {
@@ -68,7 +71,9 @@ open class LuaTypeGuessableLookupElement(name: String, val psi: LuaPsiElement, p
     }
 }
 
-class LuaFieldLookupElement(val fieldName: String, val field: LuaClassField, val ty:ITy?, bold: Boolean)
+class LuaFieldLookupElement(val fieldName: String, val field: LuaClassField, val ty:ITy?, bold: Boolean,
+                            private val clazzName: String = "",
+                            private val fieldComment: String? = null)
     : LuaLookupElement(fieldName, bold, null), LuaDocumentationLookupElement {
 
     override fun getDocumentationElement(context: SearchContext): PsiElement? {
@@ -96,6 +101,19 @@ class LuaFieldLookupElement(val fieldName: String, val field: LuaClassField, val
         if (icon == null)
             lazyInit()
         super.renderElement(presentation)
+        // field 尾注释用文档绿显示，类名部分装饰为灰色，便于在补全列表里区分
+        if (!fieldComment.isNullOrEmpty()) {
+            val classPart = "  [$clazzName]"
+            presentation.setTailText(classPart + "  " + fieldComment, COMMENT_COLOR)
+            presentation.decorateTailItemTextRange(
+                TextRange(0, classPart.length),
+                LookupElementPresentation.LookupItemDecoration.GRAY
+            )
+        }
+    }
+
+    companion object {
+        private val COMMENT_COLOR = JBColor(Color(0x6A8759), Color(0x629755))
     }
 }
 

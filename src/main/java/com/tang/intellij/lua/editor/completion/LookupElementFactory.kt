@@ -21,6 +21,7 @@ import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.psi.tree.IElementType
 import com.tang.intellij.lua.Constants
+import com.tang.intellij.lua.comment.psi.LuaDocTagField
 import com.tang.intellij.lua.psi.LuaClassField
 import com.tang.intellij.lua.psi.LuaClassMember
 import com.tang.intellij.lua.psi.LuaPsiElement
@@ -86,7 +87,7 @@ class LookupElementFactory {
                                      field: LuaClassField,
                                      type:ITy?,
                                      bold: Boolean): LuaLookupElement {
-            val element = LuaFieldLookupElement(name, field, type, bold)
+            val element = LuaFieldLookupElement(name, field, type, bold, clazzName, fieldCommentText(field))
             if (!LuaRefactoringUtil.isLuaIdentifier(name)) {
                 element.lookupString = "['$name']"
                 val baseHandler = element.handler
@@ -96,8 +97,23 @@ class LookupElementFactory {
                     insertionContext.document.deleteString(insertionContext.startOffset - 1, insertionContext.startOffset)
                 }
             }
-            element.setTailText("  [$clazzName]")
+            element.setTailText("  [$clazzName]" + fieldCommentSuffix(field))
             return element
+        }
+
+        /** 取 @field 尾注释文本（`---@field x T 注释` / `@注释` 两种形式），压缩空白并截断。 */
+        private fun fieldCommentText(field: LuaClassField): String? {
+            val comment = (field as? LuaDocTagField)?.commentString?.string?.text?.trim()
+                ?.replace(Regex("\\s+"), " ")
+                ?: return null
+            if (comment.isEmpty()) return null
+            return if (comment.length > 50) comment.substring(0, 50) + "…" else comment
+        }
+
+        /** 补全候选行尾联显示 @field 尾注释（renderElement 里按颜色区分），超长截断。 */
+        private fun fieldCommentSuffix(field: LuaClassField): String {
+            val comment = fieldCommentText(field) ?: return ""
+            return "  $comment"
         }
     }
 }

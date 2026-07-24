@@ -296,7 +296,7 @@ abstract class TyClass(override val className: String,
 }
 
 class TyPsiDocClass(tagClass: LuaDocTagClass) : TyClass(
-    tagClass.name,
+    tagClass.name!!,
     superClassNames = tagClass.superClassNameRefList.map { it.text },
     implementsClassNames = tagClass.implementsNamesFromComment()
 ) {

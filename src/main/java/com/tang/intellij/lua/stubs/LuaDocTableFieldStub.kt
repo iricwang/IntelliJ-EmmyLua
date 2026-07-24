@@ -52,7 +52,7 @@ class LuaDocTableFieldType : LuaStubElementType<LuaDocTableFieldStub, LuaDocTabl
     }
 
     override fun createStub(tableDef: LuaDocTableField, parentStub: StubElement<*>): LuaDocTableFieldStub {
-        val name = tableDef.name
+        val name = tableDef.name!!
         val type = tableDef.ty?.getType()
         val p = tableDef.parent as LuaDocTableDef
         val pTypeName = getDocTableTypeName(p)

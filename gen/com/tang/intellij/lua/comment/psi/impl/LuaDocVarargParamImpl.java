@@ -35,8 +35,7 @@ public class LuaDocVarargParamImpl extends ASTWrapperPsiElement implements LuaDo
   }
 
   @Override
-  @NotNull
-  public ITy getType() {
+  public @NotNull ITy getType() {
     return LuaDocPsiImplUtilKt.getType(this);
   }
 

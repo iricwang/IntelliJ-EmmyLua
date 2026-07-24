@@ -11,7 +11,6 @@ public interface LuaDocArrTy extends LuaDocTy {
   @NotNull
   LuaDocTy getTy();
 
-  @NotNull
-  ITy getType();
+  @NotNull ITy getType();
 
 }

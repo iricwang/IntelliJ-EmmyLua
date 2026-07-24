@@ -12,10 +12,8 @@ public interface LuaDocClassNameRef extends LuaDocPsiElement {
   @NotNull
   PsiElement getId();
 
-  @NotNull
-  PsiReference getReference();
+  @NotNull PsiReference getReference();
 
-  @NotNull
-  ITy resolveType();
+  @NotNull ITy resolveType();
 
 }

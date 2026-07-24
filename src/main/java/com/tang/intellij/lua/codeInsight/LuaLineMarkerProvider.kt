@@ -120,7 +120,9 @@ class LuaLineMarkerProvider : AbstractLineMarkerProvider() {
                                 = "Choose Subclass of ${element.name}"
 
                         override fun search(elt: PsiElement): Query<LuaDocTagClass> {
-                            return LuaClassInheritorsSearch.search(GlobalSearchScope.allScope(project), project, element.name)
+                            return LuaClassInheritorsSearch.search(GlobalSearchScope.allScope(project), project,
+                                element.name.toString()
+                            )
                         }
                     },
                     GutterIconRenderer.Alignment.CENTER,

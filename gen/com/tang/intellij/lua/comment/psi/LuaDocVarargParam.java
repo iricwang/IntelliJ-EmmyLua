@@ -11,7 +11,6 @@ public interface LuaDocVarargParam extends LuaDocPsiElement {
   @Nullable
   LuaDocTy getTy();
 
-  @NotNull
-  ITy getType();
+  @NotNull ITy getType();
 
 }

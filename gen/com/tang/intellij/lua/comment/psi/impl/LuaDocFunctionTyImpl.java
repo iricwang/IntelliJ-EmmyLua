@@ -53,14 +53,12 @@ public class LuaDocFunctionTyImpl extends LuaDocTyImpl implements LuaDocFunction
   }
 
   @Override
-  @NotNull
-  public ITy getType() {
+  public @NotNull ITy getType() {
     return LuaDocPsiImplUtilKt.getType(this);
   }
 
   @Override
-  @NotNull
-  public ITy getReturnType() {
+  public @NotNull ITy getReturnType() {
     return LuaDocPsiImplUtilKt.getReturnType(this);
   }
 

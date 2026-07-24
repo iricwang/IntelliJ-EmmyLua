@@ -20,6 +20,10 @@ public class LuaDocTableDefImpl extends StubBasedPsiElementBase<LuaDocTableDefSt
     super(stub, type);
   }
 
+  public LuaDocTableDefImpl(@NotNull LuaDocTableDefStub stub, @NotNull IElementType type) {
+    super(stub, type);
+  }
+
   public LuaDocTableDefImpl(@NotNull ASTNode node) {
     super(node);
   }

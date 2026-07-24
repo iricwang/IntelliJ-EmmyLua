@@ -8,8 +8,7 @@ import com.tang.intellij.lua.ty.ITy;
 
 public interface LuaDocStringLiteralTy extends LuaDocTy {
 
-  @NotNull
-  ITy getType();
+  @NotNull ITy getType();
 
   @NotNull
   PsiElement getContent();

@@ -20,10 +20,8 @@ public interface LuaDocFunctionTy extends LuaDocTy {
   @Nullable
   LuaDocVarargParam getVarargParam();
 
-  @NotNull
-  ITy getType();
+  @NotNull ITy getType();
 
-  @NotNull
-  ITy getReturnType();
+  @NotNull ITy getReturnType();
 
 }

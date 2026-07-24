@@ -22,6 +22,10 @@ public class LuaDocTagClassImpl extends StubBasedPsiElementBase<LuaDocTagClassSt
     super(stub, type);
   }
 
+  public LuaDocTagClassImpl(@NotNull LuaDocTagClassStub stub, @NotNull IElementType type) {
+    super(stub, type);
+  }
+
   public LuaDocTagClassImpl(@NotNull ASTNode node) {
     super(node);
   }
@@ -53,32 +57,27 @@ public class LuaDocTagClassImpl extends StubBasedPsiElementBase<LuaDocTagClassSt
   }
 
   @Override
-  @NotNull
-  public ITyClass getType() {
+  public @NotNull ITyClass getType() {
     return LuaDocPsiImplUtilKt.getType(this);
   }
 
   @Override
-  @NotNull
-  public ItemPresentation getPresentation() {
+  public @NotNull ItemPresentation getPresentation() {
     return LuaDocPsiImplUtilKt.getPresentation(this);
   }
 
   @Override
-  @NotNull
-  public PsiElement getNameIdentifier() {
+  public @NotNull PsiElement getNameIdentifier() {
     return LuaDocPsiImplUtilKt.getNameIdentifier(this);
   }
 
   @Override
-  @NotNull
-  public PsiElement setName(@NotNull String newName) {
+  public @NotNull PsiElement setName(@NotNull String newName) {
     return LuaDocPsiImplUtilKt.setName(this, newName);
   }
 
   @Override
-  @NotNull
-  public String getName() {
+  public @Nullable String getName() {
     return LuaDocPsiImplUtilKt.getName(this);
   }
 
@@ -88,8 +87,7 @@ public class LuaDocTagClassImpl extends StubBasedPsiElementBase<LuaDocTagClassSt
   }
 
   @Override
-  @NotNull
-  public String toString() {
+  public @NotNull String toString() {
     return LuaDocPsiImplUtilKt.toString(this);
   }
 
@@ -99,9 +97,9 @@ public class LuaDocTagClassImpl extends StubBasedPsiElementBase<LuaDocTagClassSt
   }
 
   @Override
-  @Nullable
-  public LuaDocClassNameRef getSuperClassNameRef() {
-    return PsiTreeUtil.getChildOfType(this, LuaDocClassNameRef.class);
+  @NotNull
+  public List<LuaDocClassNameRef> getSuperClassNameRefList() {
+    return PsiTreeUtil.getChildrenOfTypeAsList(this, LuaDocClassNameRef.class);
   }
 
   @Override

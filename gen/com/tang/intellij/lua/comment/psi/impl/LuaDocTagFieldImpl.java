@@ -24,6 +24,10 @@ public class LuaDocTagFieldImpl extends StubBasedPsiElementBase<LuaDocTagFieldSt
     super(stub, type);
   }
 
+  public LuaDocTagFieldImpl(@NotNull LuaDocTagFieldStub stub, @NotNull IElementType type) {
+    super(stub, type);
+  }
+
   public LuaDocTagFieldImpl(@NotNull ASTNode node) {
     super(node);
   }
@@ -73,14 +77,12 @@ public class LuaDocTagFieldImpl extends StubBasedPsiElementBase<LuaDocTagFieldSt
   }
 
   @Override
-  @NotNull
-  public ITy guessParentType(@NotNull SearchContext context) {
+  public @NotNull ITy guessParentType(@NotNull SearchContext context) {
     return LuaDocPsiImplUtilKt.guessParentType(this, context);
   }
 
   @Override
-  @NotNull
-  public Visibility getVisibility() {
+  public @NotNull Visibility getVisibility() {
     return LuaDocPsiImplUtilKt.getVisibility(this);
   }
 
@@ -90,20 +92,17 @@ public class LuaDocTagFieldImpl extends StubBasedPsiElementBase<LuaDocTagFieldSt
   }
 
   @Override
-  @Nullable
-  public PsiElement getNameIdentifier() {
+  public @Nullable PsiElement getNameIdentifier() {
     return LuaDocPsiImplUtilKt.getNameIdentifier(this);
   }
 
   @Override
-  @NotNull
-  public PsiElement setName(@NotNull String newName) {
+  public @NotNull PsiElement setName(@NotNull String newName) {
     return LuaDocPsiImplUtilKt.setName(this, newName);
   }
 
   @Override
-  @Nullable
-  public String getName() {
+  public @Nullable String getName() {
     return LuaDocPsiImplUtilKt.getName(this);
   }
 
@@ -113,20 +112,22 @@ public class LuaDocTagFieldImpl extends StubBasedPsiElementBase<LuaDocTagFieldSt
   }
 
   @Override
-  @Nullable
-  public String getFieldName() {
+  public @Nullable String getFieldName() {
     return LuaDocPsiImplUtilKt.getFieldName(this);
   }
 
   @Override
-  @NotNull
-  public String toString() {
+  public boolean isNullable() {
+    return LuaDocPsiImplUtilKt.isNullable(this);
+  }
+
+  @Override
+  public @NotNull String toString() {
     return LuaDocPsiImplUtilKt.toString(this);
   }
 
   @Override
-  @NotNull
-  public ItemPresentation getPresentation() {
+  public @NotNull ItemPresentation getPresentation() {
     return LuaDocPsiImplUtilKt.getPresentation(this);
   }
 

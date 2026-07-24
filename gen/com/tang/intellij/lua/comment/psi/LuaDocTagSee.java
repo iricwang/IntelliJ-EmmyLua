@@ -14,7 +14,6 @@ public interface LuaDocTagSee extends LuaDocTag {
   @Nullable
   PsiElement getId();
 
-  @Nullable
-  PsiReference getReference();
+  @Nullable PsiReference getReference();
 
 }

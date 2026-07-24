@@ -21,6 +21,10 @@ public class LuaDocTagTypeImpl extends StubBasedPsiElementBase<LuaDocTagTypeStub
     super(stub, type);
   }
 
+  public LuaDocTagTypeImpl(@NotNull LuaDocTagTypeStub stub, @NotNull IElementType type) {
+    super(stub, type);
+  }
+
   public LuaDocTagTypeImpl(@NotNull ASTNode node) {
     super(node);
   }
@@ -52,8 +56,7 @@ public class LuaDocTagTypeImpl extends StubBasedPsiElementBase<LuaDocTagTypeStub
   }
 
   @Override
-  @NotNull
-  public ITy getType() {
+  public @NotNull ITy getType() {
     return LuaDocPsiImplUtilKt.getType(this);
   }
 

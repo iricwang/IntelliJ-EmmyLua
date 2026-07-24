@@ -14,14 +14,11 @@ public interface LuaDocGenericDef extends PsiNameIdentifierOwner, LuaDocPsiEleme
   @NotNull
   PsiElement getId();
 
-  @Nullable
-  PsiElement getNameIdentifier();
+  @Nullable PsiElement getNameIdentifier();
 
-  @NotNull
-  PsiElement setName(@NotNull String newName);
+  @NotNull PsiElement setName(@NotNull String newName);
 
-  @Nullable
-  String getName();
+  @Nullable String getName();
 
   int getTextOffset();
 

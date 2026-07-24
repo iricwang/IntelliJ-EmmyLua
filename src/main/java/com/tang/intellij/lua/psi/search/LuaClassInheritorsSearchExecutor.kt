@@ -45,7 +45,7 @@ class LuaClassInheritorsSearchExecutor : QueryExecutor<LuaDocTagClass, LuaClassI
         })
         if (ret && searchParameters.isDeep) {
             for (def in processed) {
-                ret = processInheritors(searchParameters, def.name, processedNames, processor)
+                ret = processInheritors(searchParameters, def.name.toString(), processedNames, processor)
                 if (!ret) break
             }
         }

@@ -30,30 +30,25 @@ public interface LuaDocTagField extends LuaClassField, LuaDocPsiElement, PsiName
   @Nullable
   PsiElement getId();
 
-  @NotNull
-  ITy guessParentType(@NotNull SearchContext context);
+  @NotNull ITy guessParentType(@NotNull SearchContext context);
 
-  @NotNull
-  Visibility getVisibility();
+  @NotNull Visibility getVisibility();
 
   int getWorth();
 
-  @Nullable
-  PsiElement getNameIdentifier();
+  @Nullable PsiElement getNameIdentifier();
 
-  @NotNull
-  PsiElement setName(@NotNull String newName);
+  @NotNull PsiElement setName(@NotNull String newName);
 
-  @Nullable
-  String getName();
+  @Nullable String getName();
 
   int getTextOffset();
 
-  @Nullable
-  String getFieldName();
+  @Nullable String getFieldName();
 
-  @NotNull
-  ItemPresentation getPresentation();
+  boolean isNullable();
+
+  @NotNull ItemPresentation getPresentation();
 
   boolean isDeprecated();
 

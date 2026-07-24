@@ -11,7 +11,6 @@ public interface LuaDocGeneralTy extends LuaDocTy {
   @NotNull
   LuaDocClassNameRef getClassNameRef();
 
-  @NotNull
-  ITy getType();
+  @NotNull ITy getType();
 
 }

@@ -19,27 +19,22 @@ public interface LuaDocTagClass extends LuaDocPsiElement, PsiNameIdentifierOwner
   @NotNull
   PsiElement getId();
 
-  @NotNull
-  ITyClass getType();
+  @NotNull ITyClass getType();
 
-  @NotNull
-  ItemPresentation getPresentation();
+  @NotNull ItemPresentation getPresentation();
 
-  @NotNull
-  PsiElement getNameIdentifier();
+  @NotNull PsiElement getNameIdentifier();
 
-  @NotNull
-  PsiElement setName(@NotNull String newName);
+  @NotNull PsiElement setName(@NotNull String newName);
 
-  @NotNull
-  String getName();
+  @Nullable String getName();
 
   int getTextOffset();
 
   boolean isDeprecated();
 
-  @Nullable
-  LuaDocClassNameRef getSuperClassNameRef();
+  @NotNull
+  List<LuaDocClassNameRef> getSuperClassNameRefList();
 
   @Nullable
   PsiElement getModule();

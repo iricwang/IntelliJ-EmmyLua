@@ -11,7 +11,6 @@ public interface LuaDocTableTy extends LuaDocTy {
   @NotNull
   LuaDocTableDef getTableDef();
 
-  @NotNull
-  ITy getType();
+  @NotNull ITy getType();
 
 }

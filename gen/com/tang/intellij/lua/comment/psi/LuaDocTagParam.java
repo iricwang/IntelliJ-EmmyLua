@@ -17,7 +17,6 @@ public interface LuaDocTagParam extends LuaDocTag {
   @Nullable
   LuaDocTy getTy();
 
-  @NotNull
-  ITy getType();
+  @NotNull ITy getType();
 
 }

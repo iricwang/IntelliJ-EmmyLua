@@ -21,6 +21,10 @@ public class LuaDocTagAliasImpl extends StubBasedPsiElementBase<LuaDocTagAliasSt
     super(stub, type);
   }
 
+  public LuaDocTagAliasImpl(@NotNull LuaDocTagAliasStub stub, @NotNull IElementType type) {
+    super(stub, type);
+  }
+
   public LuaDocTagAliasImpl(@NotNull ASTNode node) {
     super(node);
   }
@@ -52,20 +56,17 @@ public class LuaDocTagAliasImpl extends StubBasedPsiElementBase<LuaDocTagAliasSt
   }
 
   @Override
-  @Nullable
-  public PsiElement getNameIdentifier() {
+  public @Nullable PsiElement getNameIdentifier() {
     return LuaDocPsiImplUtilKt.getNameIdentifier(this);
   }
 
   @Override
-  @NotNull
-  public PsiElement setName(@NotNull String newName) {
+  public @NotNull PsiElement setName(@NotNull String newName) {
     return LuaDocPsiImplUtilKt.setName(this, newName);
   }
 
   @Override
-  @Nullable
-  public String getName() {
+  public @Nullable String getName() {
     return LuaDocPsiImplUtilKt.getName(this);
   }
 
@@ -75,8 +76,7 @@ public class LuaDocTagAliasImpl extends StubBasedPsiElementBase<LuaDocTagAliasSt
   }
 
   @Override
-  @NotNull
-  public ITy getType() {
+  public @NotNull ITy getType() {
     return LuaDocPsiImplUtilKt.getType(this);
   }
 

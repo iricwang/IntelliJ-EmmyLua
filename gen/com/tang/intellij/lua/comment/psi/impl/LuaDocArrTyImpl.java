@@ -35,8 +35,7 @@ public class LuaDocArrTyImpl extends LuaDocTyImpl implements LuaDocArrTy {
   }
 
   @Override
-  @NotNull
-  public ITy getType() {
+  public @NotNull ITy getType() {
     return LuaDocPsiImplUtilKt.getType(this);
   }
 

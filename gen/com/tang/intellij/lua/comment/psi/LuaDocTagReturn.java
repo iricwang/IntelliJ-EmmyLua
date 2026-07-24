@@ -14,10 +14,8 @@ public interface LuaDocTagReturn extends LuaDocTag {
   @Nullable
   LuaDocTypeList getTypeList();
 
-  @NotNull
-  ITy resolveTypeAt(int index);
+  @NotNull ITy resolveTypeAt(int index);
 
-  @NotNull
-  ITy getType();
+  @NotNull ITy getType();
 
 }

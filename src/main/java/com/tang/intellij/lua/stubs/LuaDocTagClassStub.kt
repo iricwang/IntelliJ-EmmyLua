@@ -47,7 +47,7 @@ class LuaDocTagClassType : LuaStubElementType<LuaDocTagClassStub, LuaDocTagClass
         val implementsClassNames = luaDocTagClass.implementsNamesFromComment()
 
         return LuaDocTagClassStubImpl(
-            luaDocTagClass.name, aliasName, superClassNames, implementsClassNames,
+            luaDocTagClass.name!!, aliasName, superClassNames, implementsClassNames,
             luaDocTagClass.isDeprecated, stubElement
         )
     }

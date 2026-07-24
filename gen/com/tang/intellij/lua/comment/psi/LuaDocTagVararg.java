@@ -14,7 +14,6 @@ public interface LuaDocTagVararg extends LuaDocTag {
   @Nullable
   LuaDocTy getTy();
 
-  @NotNull
-  ITy getType();
+  @NotNull ITy getType();
 
 }

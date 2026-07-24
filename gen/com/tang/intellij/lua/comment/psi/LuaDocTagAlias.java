@@ -18,18 +18,14 @@ public interface LuaDocTagAlias extends LuaTypeAlias, LuaDocPsiElement, PsiNameI
   @Nullable
   PsiElement getId();
 
-  @Nullable
-  PsiElement getNameIdentifier();
+  @Nullable PsiElement getNameIdentifier();
 
-  @NotNull
-  PsiElement setName(@NotNull String newName);
+  @NotNull PsiElement setName(@NotNull String newName);
 
-  @Nullable
-  String getName();
+  @Nullable String getName();
 
   int getTextOffset();
 
-  @NotNull
-  ITy getType();
+  @NotNull ITy getType();
 
 }

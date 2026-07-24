@@ -11,7 +11,8 @@ public interface LuaDocParamNameRef extends LuaDocPsiElement {
   @NotNull
   PsiElement getId();
 
-  @NotNull
-  PsiReference getReference();
+  @NotNull PsiReference getReference();
+
+  boolean isNullable();
 
 }
