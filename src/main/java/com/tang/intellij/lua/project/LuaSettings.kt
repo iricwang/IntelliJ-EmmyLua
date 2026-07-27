@@ -57,6 +57,12 @@ class LuaSettings : PersistentStateComponent<LuaSettings> {
     var additionalSourcesRoot = arrayOf<String>()
 
     /**
+     * 类工厂函数（ClassActivity/ClassDialog/ClassToast）自动类型推断生效的目录（路径片段）。
+     * 空数组表示不限制，所有文件都生效。
+     */
+    var classFactoryDirs: Array<String> = arrayOf("client/game_play/guis", "client/game_lobby/guis")
+
+    /**
      * 使用泛型
      */
     var enableGeneric: Boolean = false
@@ -103,6 +109,17 @@ class LuaSettings : PersistentStateComponent<LuaSettings> {
         set(value) {
             requireLikeFunctionNames = value.split(";").map { it.trim() }.toTypedArray()
         }
+
+    var classFactoryDirsString: String
+        get() {
+            return classFactoryDirs.joinToString(";")
+        }
+        set(value) {
+            classFactoryDirs = value.split(";")
+                .map { it.trim().replace('\\', '/').trim('/') }
+                .filter { it.isNotEmpty() }
+                .toTypedArray()
+        }
     companion object {
 
         val instance: LuaSettings
@@ -114,6 +131,20 @@ class LuaSettings : PersistentStateComponent<LuaSettings> {
 
         fun isRequireLikeFunctionName(name: String): Boolean {
             return instance.requireLikeFunctionNames.contains(name) || name == Constants.WORD_REQUIRE
+        }
+
+        /**
+         * 类工厂函数自动类型推断是否对该文件路径生效。
+         * 未配置目录时不限制；否则路径（统一为 / 分隔）包含任一配置片段即生效。
+         */
+        fun isInClassFactoryDir(path: String?): Boolean {
+            val dirs = instance.classFactoryDirs
+            if (dirs.isEmpty())
+                return true
+            if (path == null)
+                return false
+            val normalized = path.replace('\\', '/')
+            return dirs.any { normalized.contains(it) }
         }
     }
 }

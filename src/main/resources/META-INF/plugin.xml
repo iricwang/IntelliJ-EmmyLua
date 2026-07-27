@@ -16,7 +16,7 @@
 
 <idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
     <id>com.tang</id>
-    <name>EmmyLua</name>
+    <name>L46-EmmyLua</name>
     <version>1.4.0</version>
     <vendor email="love.tangzx@qq.com">tangzx</vendor>
     <category>Custom Languages</category>
