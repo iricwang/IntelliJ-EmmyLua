@@ -186,8 +186,8 @@ private fun LuaCallExpr.infer(context: SearchContext): ITy {
     }
 
     // 从 ClassActivity("xxx") / ClassDialog("xxx") / ClassToast("xxx") 类工厂函数中推断类型
-    if (expr is LuaNameExpr) {
-        val factoryTy = inferClassFactoryCall(luaCallExpr, expr.name)
+    if (expr is LuaNameExpr && LuaClassFactory.isFactoryFunction(expr.name)) {
+        val factoryTy = LuaClassFactory.inferCall(luaCallExpr, expr.name)
         if (factoryTy != null)
             return factoryTy
     }
@@ -219,37 +219,6 @@ private fun LuaCallExpr.infer(context: SearchContext): ITy {
     }
 
     return ret
-}
-
-/** 类工厂函数名 -> 默认基类名 */
-private val CLASS_FACTORY_BASE_CLASSES = mapOf(
-    "ClassActivity" to "Activity",
-    "ClassDialog" to "Dialog",
-    "ClassToast" to "Toast"
-)
-
-/**
- * 从类工厂函数调用中推断类型，无需手写 `---@type`：
- * ```
- * local M = ClassActivity("arena_endsettle") --> arena_endsettleActivity : Activity
- * local M = ClassDialog("arena_detail")      --> arena_detail : Dialog
- * local M = ClassToast("CommonToast")        --> CommonToast : Toast
- * ```
- * 仅在 [LuaSettings.classFactoryDirs] 配置的目录下生效；目录为空时不限制。
- */
-private fun inferClassFactoryCall(callExpr: LuaCallExpr, fnName: String): ITy? {
-    val baseClassName = CLASS_FACTORY_BASE_CLASSES[fnName] ?: return null
-    if (!LuaSettings.isInClassFactoryDir(callExpr.containingFile?.virtualFile?.path))
-        return null
-    val arg = callExpr.firstStringArg as? LuaLiteralExpr ?: return null
-    if (arg.kind != LuaLiteralKind.String)
-        return null
-    var className = arg.stringValue
-    if (className.isEmpty())
-        return null
-    if (fnName == "ClassActivity" && !className.endsWith("Activity"))
-        className += "Activity"
-    return createSerializedClass(className, superClassNames = listOf(baseClassName))
 }
 
 private fun LuaNameExpr.infer(context: SearchContext): ITy {
@@ -420,7 +389,7 @@ private fun LuaIndexExpr.infer(context: SearchContext): ITy {
 private fun guessFieldType(fieldName: String, type: ITyClass, context: SearchContext): ITy {
     // _G.var = {}  <==>  var = {}
     if (type.className == Constants.WORD_G)
-        return TyClass.createGlobalType(fieldName)
+        return TyClass.createGlobalType(fieldName, if (context.forStub) null else context.project)
 
     var set:ITy = Ty.UNKNOWN
 
@@ -428,6 +397,15 @@ private fun guessFieldType(fieldName: String, type: ITyClass, context: SearchCon
         set = set.union(it.guessType(context))
         true
     })
+
+    // 类工厂注册的类模拟 fakeApi 中 `---@field X X` 的效果：
+    // Dialog.TutorialSelectMaskDialog --> TutorialSelectMaskDialog（基类注册表访问）
+    // M.TutorialSelectMaskDialog --> TutorialSelectMaskDialog（类自身的同名 field）
+    if (Ty.isInvalid(set) && !context.forStub) {
+        val base = LuaClassFactory.getBaseClassName(context.project, fieldName)
+        if (base != null && (base == type.className || fieldName == type.className))
+            set = createSerializedClass(fieldName, superClassNames = listOf(base))
+    }
 
     return set
 }

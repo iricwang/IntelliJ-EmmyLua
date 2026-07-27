@@ -245,15 +245,21 @@ abstract class TyClass(override val className: String,
         fun createGlobalType(nameExpr: LuaNameExpr, store: Boolean): ITy {
             val name = nameExpr.name
             val g = createSerializedClass(getGlobalTypeName(nameExpr), name, null, null, TyFlags.GLOBAL)
-            if (!store && LuaSettings.instance.isRecognizeGlobalNameAsType)
-                return createSerializedClass(name, name, null, null, TyFlags.GLOBAL).union(g)
+            if (!store && LuaSettings.instance.isRecognizeGlobalNameAsType) {
+                //类工厂注册的类，全局名直接带上基类（模拟 `---@field X X`）
+                val base = LuaClassFactory.getBaseClassName(nameExpr.project, name)
+                return createSerializedClass(name, name, base, null, TyFlags.GLOBAL).union(g)
+            }
             return g
         }
 
-        fun createGlobalType(name: String): ITy {
+        fun createGlobalType(name: String, project: Project? = null): ITy {
             val g = createSerializedClass(getGlobalTypeName(name), name, null, null, TyFlags.GLOBAL)
-            if (LuaSettings.instance.isRecognizeGlobalNameAsType)
-                return createSerializedClass(name, name, null, null, TyFlags.GLOBAL).union(g)
+            if (LuaSettings.instance.isRecognizeGlobalNameAsType) {
+                //类工厂注册的类，全局名直接带上基类（模拟 `---@field X X`）
+                val base = project?.let { LuaClassFactory.getBaseClassName(it, name) }
+                return createSerializedClass(name, name, base, null, TyFlags.GLOBAL).union(g)
+            }
             return g
         }
 

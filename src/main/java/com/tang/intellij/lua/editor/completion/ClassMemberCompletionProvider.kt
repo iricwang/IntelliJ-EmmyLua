@@ -21,6 +21,7 @@ import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.completion.PrefixMatcher
 import com.intellij.codeInsight.completion.PrioritizedLookupElement
 import com.intellij.codeInsight.lookup.LookupElement
+import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.Processor
@@ -115,9 +116,12 @@ open class ClassMemberCompletionProvider : LuaCompletionProvider() {
                            handlerProcessor: HandlerProcessor?) {
         val context = SearchContext.get(project)
         luaType.lazyInit(context)
+        var hasSelfField = false
         luaType.processMembers(context) { curType, member ->
             ProgressManager.checkCanceled()
             member.name?.let {
+                if (it == luaType.className)
+                    hasSelfField = true
                 if (prefixMatcher.prefixMatches(it) && curType.isVisibleInScope(project, contextTy, member.visibility)) {
                     addMember(completionResultSet,
                             member,
@@ -128,6 +132,18 @@ open class ClassMemberCompletionProvider : LuaCompletionProvider() {
                             handlerProcessor)
                 }
             }
+        }
+
+        //类工厂（ClassActivity/ClassDialog/ClassToast）注册的类补充同名 field 建议，
+        //模拟 fakeApi 中 `---@field X X` 的效果
+        val className = luaType.className
+        if (!hasSelfField && prefixMatcher.prefixMatches(className) &&
+            LuaClassFactory.getBaseClassName(project, className) != null) {
+            val element = LookupElementBuilder.create(className)
+                .withIcon(LuaIcons.CLASS_FIELD)
+                .withTypeText(className, true)
+                .withTailText("  [$className]", true)
+            completionResultSet.addElement(element)
         }
     }
 
