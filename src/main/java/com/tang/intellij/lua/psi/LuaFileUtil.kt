@@ -17,7 +17,6 @@
 package com.tang.intellij.lua.psi
 
 import com.intellij.ide.plugins.PluginManagerCore
-import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.FileIndexFacade
 import com.intellij.openapi.util.Key
@@ -38,7 +37,8 @@ object LuaFileUtil {
 
     private val pluginVirtualDirectory: VirtualFile?
         get() {
-            val descriptor = PluginManagerCore.getPlugin(PluginId.getId("com.tang"))
+            //按加载类定位插件描述符，避免硬编码插件 ID（ID 改名后标准库等资源会整体加载失败）
+            val descriptor = PluginManagerCore.getPluginDescriptorOrPlatformByClassName(LuaFileUtil::class.java.name)
             if (descriptor != null) {
                 return VirtualFileManager.getInstance().findFileByNioPath(descriptor.pluginPath)
             }

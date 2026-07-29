@@ -38,6 +38,7 @@
         <additionalLibraryRootsProvider implementation="com.tang.intellij.lua.ue.LuaUEBlueprintLibraryProvider"/>
         <postStartupActivity implementation="com.tang.intellij.lua.xml.LuaXmlStartupActivity"/>
         <postStartupActivity implementation="com.tang.intellij.lua.ue.LuaUEBlueprintStartupActivity"/>
+        <postStartupActivity implementation="com.tang.intellij.lua.debugger.LuaDebuggerLibsStartupActivity"/>
         <httpRequestHandler implementation="com.tang.intellij.lua.ue.LuaUEBlueprintHttpHandler"/>
         <directoryProjectGenerator implementation="com.tang.intellij.lua.project.EmmyLuaDirectoryProjectGenerator"/>
 
@@ -53,6 +54,8 @@
         <lang.quoteHandler language="Lua" implementationClass="com.tang.intellij.lua.codeInsight.editorActions.LuaQuoteHandler"/>
         <highlightErrorFilter implementation="com.tang.intellij.lua.highlighting.LuaHighlightErrorFilter"/>
         <iconProvider implementation="com.tang.intellij.lua.editor.LuaIconProvider"/>
+        <!--RPC 跳转目标的 XML 图标（只装饰 xmlDefDir 下的 xml token）-->
+        <iconProvider implementation="com.tang.intellij.lua.xml.LuaXmlRpcIconProvider"/>
         <fileType name="lua" implementationClass="com.tang.intellij.lua.lang.LuaFileType" fieldName="INSTANCE" extensions="lua;lua.txt" language="Lua"/>
         <psi.referenceContributor language="Lua" implementation="com.tang.intellij.lua.reference.LuaReferenceContributor"/>
         <languageInjector implementation="com.tang.intellij.lua.lang.LuaLanguageInjector"/>
@@ -77,6 +80,12 @@
         <!--navigate-->
         <gotoClassContributor implementation="com.tang.intellij.lua.editor.LuaClassNavigationContributor"/>
         <gotoSymbolContributor implementation="com.tang.intellij.lua.editor.LuaSymbolNavigationContributor"/>
+        <!--RPC 发送方调用 → XML 定义行 + 对端 do-实现（仅当解析落在 lua-xml-defs 合成库时接管）-->
+        <gotoDeclarationHandler implementation="com.tang.intellij.lua.xml.LuaXmlGotoDeclarationHandler"/>
+        <!--界面加载调用（可配置函数名）的 URL 字符串 → 经引擎 open-asset 打开 WBP-->
+        <gotoDeclarationHandler implementation="com.tang.intellij.lua.ue.LuaUEWidgetGotoDeclarationHandler"/>
+        <!--引擎通信失败等通知-->
+        <notificationGroup id="Lua UE" displayType="BALLOON"/>
         <breadcrumbsInfoProvider implementation="com.tang.intellij.lua.editor.LuaBreadcrumbsProvider"/>
 
         <!--completion-->

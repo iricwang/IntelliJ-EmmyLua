@@ -28,7 +28,7 @@ import com.intellij.openapi.util.Key
 import com.intellij.xdebugger.XDebugSession
 import com.tang.intellij.lua.debugger.LogConsoleType
 import com.tang.intellij.lua.debugger.remote.LuaMobDebugProcess
-import com.tang.intellij.lua.psi.LuaFileUtil
+import com.tang.intellij.lua.debugger.LuaDebuggerLibs
 
 internal class LuaAppMobProcess(session: XDebugSession) : LuaMobDebugProcess(session) {
     private val configuration: LuaAppRunConfiguration = session.runProfile as LuaAppRunConfiguration
@@ -36,7 +36,9 @@ internal class LuaAppMobProcess(session: XDebugSession) : LuaMobDebugProcess(ses
 
     override fun sessionInitialized() {
         super.sessionInitialized()
-        val setupPackagePath = StringBuilder(String.format("%s/?.lua;", LuaFileUtil.getPluginVirtualFile("debugger/mobdebug")))
+        //mobdebug 释放到用户目录（~/.emmylua/debugger/mobdebug），统一正斜杠避免 Lua 转义问题
+        val mobdebugDir = LuaDebuggerLibs.getMobdebugDir().absolutePath.replace('\\', '/')
+        val setupPackagePath = StringBuilder(String.format("%s/?.lua;", mobdebugDir))
 
         val modules = ModuleManager.getInstance(session.project).modules
         for (module in modules) {

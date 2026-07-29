@@ -21,7 +21,23 @@
     <vendor email="love.tangzx@qq.com">tangzx</vendor>
     <category>Custom Languages</category>
     <description><![CDATA[
-    Support for Lua programming language.<br>
+    Support for Lua programming language (EmmyLua fork for L46 / FortySix).<br>
+    <br>
+    <b>L46 定制扩展：</b><br>
+    • <b>RPC 跳转</b>：Ctrl+Click 发送方调用（如 <code>self.c2dsSender.c2sXxx(...)</code>、<code>s2cSender.s2cXxx(...)</code>），
+      直接给出「XML 协议定义行」和「对端 do-实现函数」（server / client 侧）两个跳转目标，
+      不再落到自动生成的 defs 缓存文件。<br>
+    • <b>引擎界面跳转</b>：Ctrl+Click 界面加载调用的 URL 字符串（如 <code>ctx:createViewByUrl("Common/WBP_X")</code>），
+      经引擎内置 IDE 服务（UnLangService 插件，端口可配）在 UE 编辑器里直接打开对应 WBP；
+      加载函数名、URL 前缀规则、资产路径模板均可在设置页配置。<br>
+    • <b>XML 协议注解库</b>：把 share/defs 下的 RPC / Enum / 实体属性 XML 转译为 EmmyLua 注解并以
+      SyntheticLibrary 挂载（按体积分包，目录监听自动重建），补全 / 跳转 / 查找引用开箱即用。<br>
+    • <b>UE 蓝图注解同步</b>：接收引擎 UnLangService 经 HTTP 推送的 WBP 界面注解，支持多开工程自动匹配。<br>
+    • <b>多继承与 @implements</b>：<code>---@class Child : Parent1, Parent2</code>、<code>---@implements I1, I2</code>。<br>
+    • <b>可空标记</b>：<code>---@param x? T</code> / <code>---@field x? T</code> ⇒ <code>T|nil</code>。<br>
+    • <b>类工厂类型推断</b>：<code>ClassActivity / ClassDialog / ClassToast</code> 免 <code>---@type</code> 直接得类类型（目录可配）。<br>
+    • <b>重写检查</b>：子类方法与父类同名方法参数个数不一致时给出警告。<br>
+    • <b>调试库自动部署</b>：emmy_core / emmyHelper / mobdebug 按插件版本自动释放到 ~/.emmylua/debugger。<br>
     ]]></description>
 
     <change-notes><![CDATA[

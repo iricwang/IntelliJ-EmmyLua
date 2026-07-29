@@ -49,6 +49,64 @@ class LuaUEBlueprintSettings(private val project: Project) : PersistentStateComp
             }
         }
 
+    /** UnLangService IDE 服务端点端口（引擎编辑器内监听，提供 /api/open-asset）。 */
+    var ueBridgePort: Int
+        get() = state.ueBridgePort
+        set(value) {
+            if (state.ueBridgePort != value) {
+                state.ueBridgePort = value
+                project.scheduleSave()
+            }
+        }
+
+    /**
+     * 界面加载函数名（分号分隔）。这些函数调用上的字符串参数会被识别为界面 URL，
+     * ctrl+click 时经引擎 open-asset 打开对应 WBP。
+     */
+    var widgetGotoFunctions: String
+        get() = state.widgetGotoFunctions
+        set(value) {
+            if (state.widgetGotoFunctions != value) {
+                state.widgetGotoFunctions = value
+                project.scheduleSave()
+            }
+        }
+
+    /** 界面 URL → 资产对象路径模板，占位符 {folder}/{path}/{name}。 */
+    var widgetUrlTemplate: String
+        get() = state.widgetUrlTemplate
+        set(value) {
+            if (state.widgetUrlTemplate != value) {
+                state.widgetUrlTemplate = value
+                project.scheduleSave()
+            }
+        }
+
+    /**
+     * URL 前缀规则（分号分隔的 键=值）：URL 以「键」开头时前置「值/」，`*` 为兜底。
+     * 复刻 Context.lua parseViewUrlToPath：Common 开头前置 Common/，其余前置 Panel/。
+     */
+    var widgetUrlPrefixes: String
+        get() = state.widgetUrlPrefixes
+        set(value) {
+            if (state.widgetUrlPrefixes != value) {
+                state.widgetUrlPrefixes = value
+                project.scheduleSave()
+            }
+        }
+
+    /** 解析后的函数名集合。 */
+    fun widgetGotoFunctionSet(): Set<String> =
+        widgetGotoFunctions.split(';').map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+
+    /** 解析后的前缀规则（保持配置顺序，`*` 兜底）。 */
+    fun widgetUrlPrefixRules(): List<Pair<String, String>> =
+        widgetUrlPrefixes.split(';').mapNotNull { rule ->
+            val idx = rule.indexOf('=')
+            if (idx <= 0) null
+            else rule.substring(0, idx).trim() to rule.substring(idx + 1).trim()
+        }
+
     override fun getState(): State = state
 
     override fun loadState(state: State) {
@@ -57,5 +115,9 @@ class LuaUEBlueprintSettings(private val project: Project) : PersistentStateComp
 
     class State {
         var ueProjectDir: String = ""
+        var ueBridgePort: Int = 13847
+        var widgetGotoFunctions: String = "newWidget;newWidgetAsync;createWidgetAsync;createViewByUrl"
+        var widgetUrlTemplate: String = "/Game/Res/SGUI/{folder}/{path}/{name}.{name}"
+        var widgetUrlPrefixes: String = "Common=Common;*=Panel"
     }
 }

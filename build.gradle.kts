@@ -37,7 +37,6 @@ data class BuildData(
     val jvmTarget: String = "1.8",
     val targetCompatibilityLevel: JavaVersion = JavaVersion.VERSION_11,
     val explicitJavaDependency: Boolean = true,
-    val bunch: String = ideaSDKShortVersion,
     // https://github.com/JetBrains/gradle-intellij-plugin/issues/403#issuecomment-542890849
     val instrumentCodeCompilerVersion: String = ideaSDKVersion
 )
@@ -46,9 +45,8 @@ val buildDataList = listOf(
     BuildData(
         ideaSDKShortVersion = "2025.3",
         ideaSDKVersion = "2025.3",
-        sinceBuild = "241",
+        sinceBuild = "223",
         untilBuild = "261.*",
-        bunch = "212",
         targetCompatibilityLevel = JavaVersion.VERSION_21,
         jvmTarget = "21"
     )
@@ -221,32 +219,6 @@ project(":") {
     intellijPlatform {
         version = version
         sandboxContainer.set(layout.buildDirectory.dir("${buildVersionData.ideaSDKShortVersion}/idea-sandbox"))
-    }
-
-    task("bunch") {
-        doLast {
-            val rev = getRev()
-            // reset
-            exec {
-                executable = "git"
-                args("reset", "HEAD", "--hard")
-            }
-            // clean untracked files
-            exec {
-                executable = "git"
-                args("clean", "-d", "-f")
-            }
-            // switch
-            exec {
-                executable = if (isWin) "bunch/bin/bunch.bat" else "bunch/bin/bunch"
-                args("switch", ".", buildVersionData.bunch)
-            }
-            // reset to HEAD
-            exec {
-                executable = "git"
-                args("reset", rev)
-            }
-        }
     }
 
     tasks {

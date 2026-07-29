@@ -24,7 +24,7 @@ import com.intellij.openapi.options.SettingsEditor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfoRt;
 import com.tang.intellij.lua.lang.LuaFileType;
-import com.tang.intellij.lua.psi.LuaFileUtil;
+import com.tang.intellij.lua.debugger.LuaDebuggerLibs;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -198,11 +198,9 @@ public class EmmyDebugSettingsPanel extends SettingsEditor<EmmyDebugConfiguratio
     }
 
     private String getDebuggerFolder() {
-        if (SystemInfoRt.isWindows)
-            return LuaFileUtil.INSTANCE.getPluginVirtualFile("debugger/emmy/windows");
-        if (SystemInfoRt.isMac)
-            return LuaFileUtil.INSTANCE.getPluginVirtualFile("debugger/emmy/mac");
-        return LuaFileUtil.INSTANCE.getPluginVirtualFile("debugger/emmy/linux");
+        //运行库释放到用户目录（~/.emmylua/debugger），不再引用插件安装目录；
+        //统一为正斜杠，避免 Windows 反斜杠在 Lua 字符串里的转义问题
+        return LuaDebuggerLibs.INSTANCE.getEmmyPlatformDir().getAbsolutePath().replace('\\', '/');
     }
 
     private void updateCodeImpl() {

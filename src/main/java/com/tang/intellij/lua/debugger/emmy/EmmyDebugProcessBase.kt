@@ -28,8 +28,7 @@ import com.intellij.xdebugger.evaluation.XDebuggerEditorsProvider
 import com.intellij.xdebugger.frame.XSuspendContext
 import com.tang.intellij.lua.debugger.*
 import com.tang.intellij.lua.psi.LuaFileManager
-import com.tang.intellij.lua.psi.LuaFileUtil
-import java.io.File
+import com.tang.intellij.lua.debugger.LuaDebuggerLibs
 
 abstract class EmmyDebugProcessBase(session: XDebugSession) : LuaDebugProcess(session), ITransportHandler {
     private val editorsProvider = LuaDebuggerEditorsProvider()
@@ -53,9 +52,10 @@ abstract class EmmyDebugProcessBase(session: XDebugSession) : LuaDebugProcess(se
 
     private fun sendInitReq() {
         // send init
-        val path = LuaFileUtil.getPluginVirtualFile("debugger/emmy/emmyHelper.lua")
-        if (path != null) {
-            val code = File(path).readText()
+        //emmyHelper.lua 释放到用户目录（~/.emmylua/debugger/emmy），不再依赖插件安装目录
+        val helperFile = LuaDebuggerLibs.getEmmyHelperFile()
+        if (helperFile.isFile) {
+            val code = helperFile.readText()
             val extList = LuaFileManager.extensions
             transporter?.send(InitMessage(code, extList))
         }

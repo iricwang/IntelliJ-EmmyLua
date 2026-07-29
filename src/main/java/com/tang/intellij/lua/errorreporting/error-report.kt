@@ -264,7 +264,7 @@ private fun getKeyValuePairs(
 		error: GitHubErrorBean,
 		appInfo: ApplicationInfoEx,
 		namesInfo: ApplicationNamesInfo): MutableMap<String, String> {
-	PluginManagerCore.getPlugin(PluginId.findId("com.tang"))?.run {
+	PluginManagerCore.getPluginDescriptorOrPlatformByClassName("com.tang.intellij.lua.lang.LuaLanguage")?.run {
 		if (error.pluginName.isBlank()) error.pluginName = name
 		if (error.pluginVersion.isBlank()) error.pluginVersion = version
 	}

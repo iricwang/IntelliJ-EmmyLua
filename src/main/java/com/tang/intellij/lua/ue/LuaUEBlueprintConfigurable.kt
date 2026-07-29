@@ -22,6 +22,7 @@ import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.FormBuilder
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -37,6 +38,10 @@ class LuaUEBlueprintConfigurable(private val project: Project) : Configurable {
     private var rootPanel: JPanel? = null
     private val dirField = TextFieldWithBrowseButton()
     private val detectedLabel = JBLabel()
+    private val portField = JBTextField()
+    private val functionsField = JBTextField()
+    private val templateField = JBTextField()
+    private val prefixesField = JBTextField()
 
     override fun getDisplayName(): String = "Lua UE Blueprint Defs"
 
@@ -51,6 +56,11 @@ class LuaUEBlueprintConfigurable(private val project: Project) : Configurable {
         val panel = FormBuilder.createFormBuilder()
             .addLabeledComponent("UE 工程目录(留空自动探测):", dirField)
             .addLabeledComponent("当前生效目录:", detectedLabel)
+            .addSeparator()
+            .addLabeledComponent("UEAIBridge 端口:", portField)
+            .addLabeledComponent("界面加载函数(分号分隔):", functionsField)
+            .addLabeledComponent("URL→资产路径模板:", templateField)
+            .addLabeledComponent("URL 前缀规则(键=值,* 兜底):", prefixesField)
             .addComponentFillVertically(JPanel(), 0)
             .panel
         rootPanel = panel
@@ -60,12 +70,20 @@ class LuaUEBlueprintConfigurable(private val project: Project) : Configurable {
 
     override fun isModified(): Boolean {
         val settings = LuaUEBlueprintSettings.getInstance(project)
-        return dirField.text.trim() != settings.ueProjectDir
+        return dirField.text.trim() != settings.ueProjectDir ||
+            portField.text.trim().toIntOrNull() != settings.ueBridgePort ||
+            functionsField.text.trim() != settings.widgetGotoFunctions ||
+            templateField.text.trim() != settings.widgetUrlTemplate ||
+            prefixesField.text.trim() != settings.widgetUrlPrefixes
     }
 
     override fun apply() {
         val settings = LuaUEBlueprintSettings.getInstance(project)
         settings.ueProjectDir = dirField.text.trim()
+        portField.text.trim().toIntOrNull()?.let { settings.ueBridgePort = it }
+        settings.widgetGotoFunctions = functionsField.text.trim()
+        settings.widgetUrlTemplate = templateField.text.trim()
+        settings.widgetUrlPrefixes = prefixesField.text.trim()
         // 注册表文件包含生效目录，重写让引擎侧立即感知。
         LuaUEBlueprintManager.getInstance(project).registerIde()
         updateDetectedLabel()
@@ -74,6 +92,10 @@ class LuaUEBlueprintConfigurable(private val project: Project) : Configurable {
     override fun reset() {
         val settings = LuaUEBlueprintSettings.getInstance(project)
         dirField.text = settings.ueProjectDir
+        portField.text = settings.ueBridgePort.toString()
+        functionsField.text = settings.widgetGotoFunctions
+        templateField.text = settings.widgetUrlTemplate
+        prefixesField.text = settings.widgetUrlPrefixes
         updateDetectedLabel()
     }
 
