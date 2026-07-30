@@ -179,6 +179,12 @@ abstract class TyClass(override val className: String,
             _superClassNames.addAll(tyClass.superClassNames)
             _implementsClassNames.clear()
             _implementsClassNames.addAll(tyClass.implementsClassNames)
+        } else if (classDef == null && _superClassNames.isEmpty()) {
+            // 类工厂（ClassActivity/ClassDialog/ClassToast）注册的类没有 ---@class 定义：
+            // 补出虚拟定义，基类为工厂基类——使 `---@return xxx_dialog` 这类
+            // 纯名字引用也能沿基类链（Dialog → Context → ...）补全/解析成员。
+            LuaClassFactory.getBaseClassName(searchContext.project, className)
+                ?.let { _superClassNames.add(it) }
         }
     }
 

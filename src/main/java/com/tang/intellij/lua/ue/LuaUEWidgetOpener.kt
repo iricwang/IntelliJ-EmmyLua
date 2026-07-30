@@ -38,6 +38,14 @@ object LuaUEWidgetOpener {
     private val LOG = Logger.getInstance(LuaUEWidgetOpener::class.java)
     private const val NOTIFICATION_GROUP = "Lua UE"
 
+    /** 通用告警通知（"Lua UE" 通知组）。 */
+    fun notifyWarning(project: Project, title: String, content: String) {
+        NotificationGroupManager.getInstance()
+            .getNotificationGroup(NOTIFICATION_GROUP)
+            .createNotification(title, content, NotificationType.WARNING)
+            .notify(project)
+    }
+
     fun openAsset(project: Project, assetPath: String) {
         val port = LuaUEBlueprintSettings.getInstance(project).ueBridgePort
         ApplicationManager.getApplication().executeOnPooledThread {

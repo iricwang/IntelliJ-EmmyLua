@@ -103,3 +103,8 @@
 ---@class void
 
 ---@class self
+---
+--- 内置标记类型：---@class X : KeyClass 的子类把同名（或首字母小写）全局数组表里的
+--- 字符串元素当作 key 字段（补全/跳转/类型推导由 L46-EmmyLua 插件提供）。
+---@class KeyClass
+

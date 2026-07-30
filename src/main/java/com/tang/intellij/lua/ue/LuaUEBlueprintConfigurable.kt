@@ -42,6 +42,7 @@ class LuaUEBlueprintConfigurable(private val project: Project) : Configurable {
     private val functionsField = JBTextField()
     private val templateField = JBTextField()
     private val prefixesField = JBTextField()
+    private val delegateExportsField = TextFieldWithBrowseButton()
 
     override fun getDisplayName(): String = "Lua UE Blueprint Defs"
 
@@ -53,6 +54,13 @@ class LuaUEBlueprintConfigurable(private val project: Project) : Configurable {
                 dirField.text = chosen.path
             }
         }
+        delegateExportsField.addActionListener {
+            val descriptor = FileChooserDescriptorFactory.createSingleFileDescriptor("txt")
+            val chosen = FileChooser.chooseFile(descriptor, project, null)
+            if (chosen != null) {
+                delegateExportsField.text = chosen.path
+            }
+        }
         val panel = FormBuilder.createFormBuilder()
             .addLabeledComponent("UE 工程目录(留空自动探测):", dirField)
             .addLabeledComponent("当前生效目录:", detectedLabel)
@@ -61,6 +69,8 @@ class LuaUEBlueprintConfigurable(private val project: Project) : Configurable {
             .addLabeledComponent("界面加载函数(分号分隔):", functionsField)
             .addLabeledComponent("URL→资产路径模板:", templateField)
             .addLabeledComponent("URL 前缀规则(键=值,* 兜底):", prefixesField)
+            .addSeparator()
+            .addLabeledComponent("DelegateExports 配置(留空取工程根):", delegateExportsField)
             .addComponentFillVertically(JPanel(), 0)
             .panel
         rootPanel = panel
@@ -74,7 +84,8 @@ class LuaUEBlueprintConfigurable(private val project: Project) : Configurable {
             portField.text.trim().toIntOrNull() != settings.ueBridgePort ||
             functionsField.text.trim() != settings.widgetGotoFunctions ||
             templateField.text.trim() != settings.widgetUrlTemplate ||
-            prefixesField.text.trim() != settings.widgetUrlPrefixes
+            prefixesField.text.trim() != settings.widgetUrlPrefixes ||
+            delegateExportsField.text.trim() != settings.delegateExportsPath
     }
 
     override fun apply() {
@@ -84,9 +95,15 @@ class LuaUEBlueprintConfigurable(private val project: Project) : Configurable {
         settings.widgetGotoFunctions = functionsField.text.trim()
         settings.widgetUrlTemplate = templateField.text.trim()
         settings.widgetUrlPrefixes = prefixesField.text.trim()
+        val delegateExportsChanged = delegateExportsField.text.trim() != settings.delegateExportsPath
+        settings.delegateExportsPath = delegateExportsField.text.trim()
         // 注册表文件包含生效目录，重写让引擎侧立即感知。
         LuaUEBlueprintManager.getInstance(project).registerIde()
         updateDetectedLabel()
+        // 配置文件路径变更后立即重新拉取
+        if (delegateExportsChanged) {
+            LuaUEReflectManager.getInstance(project).refresh(notifyOnFailure = true)
+        }
     }
 
     override fun reset() {
@@ -96,6 +113,7 @@ class LuaUEBlueprintConfigurable(private val project: Project) : Configurable {
         functionsField.text = settings.widgetGotoFunctions
         templateField.text = settings.widgetUrlTemplate
         prefixesField.text = settings.widgetUrlPrefixes
+        delegateExportsField.text = settings.delegateExportsPath
         updateDetectedLabel()
     }
 

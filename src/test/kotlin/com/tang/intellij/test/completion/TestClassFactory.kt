@@ -210,4 +210,232 @@ class TestClassFactory : TestCompletionBase() {
             assertTrue("flags" in it)
         }
     }
+
+    /** `---@return xxx_dialog` 纯名字引用（无 ---@class 定义）也应继承基类成员 */
+    fun `test return type of factory class inherits base members`() {
+        doTest("""
+            --- client/game_lobby/guis/npctask/lobbynpctask_dialog.lua
+
+            ---@class Dialog
+            ---@field flags number
+            local Dialog = {}
+            function Dialog:getWindow() end
+
+            local M = ClassDialog("lobbynpctask_dialog")
+
+            ---@return lobbynpctask_dialog
+            function M.showDialog()
+            end
+
+            local w = M.showDialog()
+            w.--[[caret]]
+        """) {
+            assertTrue("getWindow" in it)
+            assertTrue("flags" in it)
+        }
+    }
+
+    /** 工厂类方法返回值类型沿基类链解析：self:getWindow() 应为 UWindow 并可补全其成员 */
+    fun `test method return type follows factory base chain`() {
+        doTest("""
+            --- uwindow.lua
+
+            ---@class UWindow
+            local UWindow = {}
+            function UWindow:ReceiveInit() end
+
+            --- client/sgui/core/context.lua
+
+            ---@class Context
+            local m = {}
+
+            ---@return UWindow
+            function m:getWindow()
+            end
+
+            --- client/sgui/core/dialog.lua
+
+            ---@class Dialog: Context
+            local Dialog = {}
+
+            --- client/game_lobby/guis/npctask/lobbynpctask_dialog.lua
+
+            local M = ClassDialog("lobbynpctask_dialog")
+
+            function M:foo()
+                local w = self:getWindow()
+                w.--[[caret]]
+            end
+        """) {
+            assertTrue("ReceiveInit" in it)
+        }
+    }
+
+    /** doc 类型位置（---@return）应能补全出工厂类名（Dialog 原样形态） */
+    fun `test factory class name in doc type completion`() {
+        val f = myFixture.addFileToProject(
+            "client/game_lobby/guis/npctask/caller_dialog.lua",
+            "local M = ClassDialog(\"lobbynpctask_dialog\")\n\n---@return lob<caret>\nfunction M.show() end"
+        )
+        myFixture.configureFromExistingVirtualFile(f.virtualFile)
+        myFixture.completeBasic()
+        // 唯一候选时补全会自动插入（lookup 为 null 属正常），断言文档结果
+        assertTrue(
+            "补全后应插入 lobbynpctask_dialog，实际：${myFixture.editor.document.text}",
+            myFixture.editor.document.text.contains("---@return lobbynpctask_dialog")
+        )
+    }
+
+    /** doc 类型位置应能补全出工厂类名（Activity 追加后缀形态） */
+    fun `test activity factory class name in doc type completion`() {
+        val f = myFixture.addFileToProject(
+            "client/game_play/guis/shelter_main/caller_activity.lua",
+            "local M = ClassActivity(\"shelter_main\")\n\n---@return shel<caret>\nfunction M.show() end"
+        )
+        myFixture.configureFromExistingVirtualFile(f.virtualFile)
+        myFixture.completeBasic()
+        assertTrue(
+            "补全后应插入 shelter_mainActivity，实际：${myFixture.editor.document.text}",
+            myFixture.editor.document.text.contains("---@return shelter_mainActivity")
+        )
+    }
+
+    /** `---@return xxxActivity`（Activity 后缀形态）也应继承基类成员 */
+    fun `test return type of activity factory class inherits base members`() {
+        doTest("""
+            --- client/game_play/guis/shelter_main/shelter_main_activity.lua
+
+            ---@class Activity
+            local Activity = {}
+            function Activity:getOwner() end
+
+            local M = ClassActivity("shelter_main")
+
+            ---@return shelter_mainActivity
+            function M.show() end
+
+            local w = M.show()
+            w.--[[caret]]
+        """) {
+            assertTrue("getOwner" in it)
+        }
+    }
+
+    /** doc 类型名引用应解析到工厂调用点（不再被 UnresolvedClassInspection 标红，且可 Ctrl+B 跳转） */
+    fun `test doc type ref resolves to factory call site`() {
+        val defFile = myFixture.addFileToProject(
+            "client/game_play/guis/shelter_main/shelter_main_activity.lua",
+            "local M = ClassActivity(\"shelter_main\")"
+        )
+        val useFile = myFixture.addFileToProject(
+            "client/game_play/guis/shelter_main/caller.lua",
+            "---@return shelter_mainActivity\nlocal function show() end"
+        )
+        val ref = com.intellij.psi.util.PsiTreeUtil.findChildOfType(
+            useFile, com.tang.intellij.lua.comment.psi.LuaDocClassNameRef::class.java
+        )!!
+        val resolved = ref.reference.resolve()
+        assertNotNull("工厂类名引用应可解析", resolved)
+        assertEquals(defFile.virtualFile, resolved!!.containingFile.virtualFile)
+        assertEquals("\"shelter_main\"", resolved.text)
+
+        // UnresolvedClassInspection 不应再报 Unresolved type
+        myFixture.enableInspections(com.tang.intellij.lua.codeInsight.inspection.doc.UnresolvedClassInspection())
+        myFixture.configureFromExistingVirtualFile(useFile.virtualFile)
+        val highlights = myFixture.doHighlighting()
+        assertTrue(
+            "不应有 Unresolved type 高亮，实际：${highlights.map { it.description }}",
+            highlights.none { it.description?.contains("Unresolved type") == true }
+        )
+    }
+
+    /** ClassViewModel：类型推断 + 回退基类 ViewModel 成员 */
+    fun `test viewmodel infer with base class fallback`() {
+        doTest("""
+            --- client/game_lobby/guis/shelter_main/shelter_main_model.lua
+
+            ---@class ViewModel
+            local ViewModel = {}
+            function ViewModel:Init() end
+
+            local M = ClassViewModel("ShelterMainPanelModel")
+            M.--[[caret]]
+        """) {
+            assertTrue("Init" in it)
+        }
+    }
+
+    /** ClassViewModel：Defines 的 @param view 类型暴露为 View 属性（补全 + 成员解析） */
+    fun `test viewmodel view property`() {
+        val f = myFixture.addFileToProject(
+            "client/game_lobby/guis/shelter_main/wbp_model.lua",
+            """
+            ---@class WBP_UI_Shelter_MainPanel
+            local WBP = {}
+            WBP.FacilityList = {}
+
+            ---@class WBP_UITaskDetailPanel
+            local WBP2 = {}
+
+            local M = ClassViewModel("ShelterMainPanelModel")
+
+            ---@param view WBP_UI_Shelter_MainPanel | WBP_UITaskDetailPanel
+            ---@param fields ViewModelFields
+            ---@param delegates ViewModelDelegates
+            function M:Defines(view, fields, delegates)
+                self.View.FacilityList = view.FacilityList
+            end
+
+            function M:foo()
+                self.View.Facility<caret>
+            end
+            """.trimIndent()
+        )
+        myFixture.configureFromExistingVirtualFile(f.virtualFile)
+        // self.View 应为 union 类型
+        val viewIndex = com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(
+            f, com.tang.intellij.lua.psi.LuaIndexExpr::class.java
+        ).first { it.text == "self.View" }
+        val ty = viewIndex.guessType(SearchContext.get(project)).toString()
+        assertTrue("self.View 应为 union 类型，实际：$ty",
+            ty.contains("WBP_UI_Shelter_MainPanel") && ty.contains("WBP_UITaskDetailPanel"))
+
+        myFixture.completeBasic()
+        // 唯一候选 FacilityList 自动插入（lookup 为 null 属正常）
+        assertTrue(
+            "补全后应插入 FacilityList，实际：${myFixture.editor.document.text}",
+            myFixture.editor.document.text.contains("self.View.FacilityList")
+        )
+    }
+
+    /** ClassViewModel：Defines 的 fields 参数沿 ViewModelFields 解析（Model 子表 = ViewModelFieldGetters） */
+    fun `test viewmodel fields param type`() {
+        val f = myFixture.addFileToProject(
+            "client/game_lobby/guis/shelter_main/wbp_model.lua",
+            """
+            ---@class ViewModelFieldGetters
+            ViewModelFieldGetters = {
+                SwitcherModel = function(context, parent) end,
+            }
+
+            ---@class ViewModelFields
+            ---@field Model ViewModelFieldGetters
+
+            local M = ClassViewModel("ShelterMainPanelModel")
+
+            ---@param view table
+            ---@param fields ViewModelFields
+            ---@param delegates ViewModelDelegates
+            function M:Defines(view, fields, delegates)
+                fields.Model.Switcher<caret>
+            end
+            """.trimIndent()
+        )
+        myFixture.configureFromExistingVirtualFile(f.virtualFile)
+        myFixture.completeBasic()
+        assertTrue(
+            "补全后应插入 SwitcherModel，实际：${myFixture.editor.document.text}",
+            myFixture.editor.document.text.contains("fields.Model.SwitcherModel")
+        )
+    }
 }

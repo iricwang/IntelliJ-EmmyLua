@@ -24,6 +24,8 @@ import com.intellij.util.Processor
 import com.tang.intellij.lua.Constants
 import com.tang.intellij.lua.psi.search.LuaShortNamesManager
 import com.tang.intellij.lua.search.SearchContext
+import com.tang.intellij.lua.ty.LuaClassFactory
+import com.tang.intellij.lua.ty.LuaKeyClass
 
 fun resolveLocal(ref: LuaNameExpr, context: SearchContext? = null) = resolveLocal(ref.name, ref, context)
 
@@ -130,6 +132,13 @@ fun multiResolve(indexExpr: LuaIndexExpr, context: SearchContext): List<PsiEleme
         true
     })
     if (list.isEmpty()) {
+        // KeyClass 子类：解析到关联全局数组表里的字符串元素
+        type.eachTopClass(Processor { ty ->
+            LuaKeyClass.findKey(context, ty.className, name)?.let { list.add(it.literal) }
+            true
+        })
+    }
+    if (list.isEmpty()) {
         val tree = LuaDeclarationTree.get(indexExpr.containingFile)
         val declaration = tree.find(indexExpr)
         if (declaration != null) {
@@ -153,6 +162,28 @@ fun resolve(indexExpr: LuaIndexExpr, idString: String, context: SearchContext): 
             return@Processor false
         true
     })
+    if (ret == null) {
+        // KeyClass 子类：解析到关联全局数组表里的字符串元素（key 字段的定义处）
+        type.eachTopClass(Processor { ty ->
+            val key = LuaKeyClass.findKey(context, ty.className, idString)
+            if (key != null) {
+                ret = key.literal
+                return@Processor false
+            }
+            true
+        })
+    }
+    if (ret == null && idString == "View") {
+        // ClassViewModel 类：View 属性解析到 Defines 的 @param view 标签
+        type.eachTopClass(Processor { ty ->
+            val def = LuaClassFactory.getViewModelDef(context, ty.className)
+            if (def?.viewParam != null) {
+                ret = def.viewParam
+                return@Processor false
+            }
+            true
+        })
+    }
     if (ret == null) {
         val tree = LuaDeclarationTree.get(indexExpr.containingFile)
         val declaration = tree.find(indexExpr)

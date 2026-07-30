@@ -31,5 +31,7 @@ class LuaUEBlueprintStartupActivity : ProjectActivity {
         manager.initMounted()
         manager.registerIde()
         manager.refreshNow()
+        // 工程打开时按类型列表自动拉取反射注解（引擎离线则静默跳过）
+        LuaUEReflectManager.getInstance(project).refresh()
     }
 }

@@ -95,6 +95,24 @@ class LuaUEBlueprintSettings(private val project: Project) : PersistentStateComp
             }
         }
 
+    /**
+     * MVVM 绑定字段导出配置（DelegateExports.txt）的路径。空串 = 默认取
+     * `<工程根>/DelegateExports.txt`。
+     */
+    var delegateExportsPath: String
+        get() = state.delegateExportsPath
+        set(value) {
+            if (state.delegateExportsPath != value) {
+                state.delegateExportsPath = value
+                project.scheduleSave()
+            }
+        }
+
+    /** 解析生效的 DelegateExports.txt 路径。 */
+    fun resolveDelegateExportsFile(): java.io.File =
+        delegateExportsPath.trim().takeIf { it.isNotEmpty() }?.let { java.io.File(it) }
+            ?: java.io.File(project.basePath ?: "", "DelegateExports.txt")
+
     /** 解析后的函数名集合。 */
     fun widgetGotoFunctionSet(): Set<String> =
         widgetGotoFunctions.split(';').map { it.trim() }.filter { it.isNotEmpty() }.toSet()
@@ -119,5 +137,6 @@ class LuaUEBlueprintSettings(private val project: Project) : PersistentStateComp
         var widgetGotoFunctions: String = "newWidget;newWidgetAsync;createWidgetAsync;createViewByUrl"
         var widgetUrlTemplate: String = "/Game/Res/SGUI/{folder}/{path}/{name}.{name}"
         var widgetUrlPrefixes: String = "Common=Common;*=Panel"
+        var delegateExportsPath: String = ""
     }
 }

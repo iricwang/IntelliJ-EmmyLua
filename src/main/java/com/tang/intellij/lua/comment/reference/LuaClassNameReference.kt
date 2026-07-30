@@ -27,6 +27,7 @@ import com.tang.intellij.lua.comment.psi.LuaDocGenericDef
 import com.tang.intellij.lua.psi.LuaElementFactory
 import com.tang.intellij.lua.psi.search.LuaShortNamesManager
 import com.tang.intellij.lua.search.SearchContext
+import com.tang.intellij.lua.ty.LuaClassFactory
 
 /**
 
@@ -63,6 +64,9 @@ class LuaClassNameReference(element: LuaDocClassNameRef) : PsiReferenceBase<LuaD
         }
 
         return LuaShortNamesManager.getInstance(myElement.project).findTypeDef(name, SearchContext.get(myElement.project))
+            // 类工厂虚拟类（ClassActivity("x") 等）：解析到工厂调用的字符串实参，
+            // 使 doc 类型名不再被标红（UnresolvedClassInspection），Ctrl+B 直达"定义处"。
+            ?: LuaClassFactory.resolveClassCallSite(myElement.project, name)
     }
 
     override fun getVariants(): Array<Any> = emptyArray()

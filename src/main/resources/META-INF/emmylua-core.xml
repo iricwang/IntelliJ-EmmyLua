@@ -36,6 +36,8 @@
         <additionalLibraryRootsProvider implementation="com.tang.intellij.lua.project.StdLibraryProvider"/>
         <additionalLibraryRootsProvider implementation="com.tang.intellij.lua.xml.LuaXmlLibraryProvider"/>
         <additionalLibraryRootsProvider implementation="com.tang.intellij.lua.ue.LuaUEBlueprintLibraryProvider"/>
+        <additionalLibraryRootsProvider implementation="com.tang.intellij.lua.ue.LuaUnLuaIntelliSenseProvider"/>
+        <additionalLibraryRootsProvider implementation="com.tang.intellij.lua.ue.LuaUEReflectLibraryProvider"/>
         <postStartupActivity implementation="com.tang.intellij.lua.xml.LuaXmlStartupActivity"/>
         <postStartupActivity implementation="com.tang.intellij.lua.ue.LuaUEBlueprintStartupActivity"/>
         <postStartupActivity implementation="com.tang.intellij.lua.debugger.LuaDebuggerLibsStartupActivity"/>
@@ -375,6 +377,11 @@
                 id="lua.newTutorial">
             <add-to-group group-id="NewGroup" anchor="after" relative-to-action="lua.newFile"/>
         </action>
+        <action class="com.tang.intellij.lua.ue.LuaUERefreshReflectAction"
+                text="刷新 UE 反射类型注解"
+                id="lua.refreshUeReflectDefs">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
 
     </actions>
 
@@ -402,5 +409,7 @@
         <luaTypeInfer implementation="com.tang.intellij.lua.ty.LuaTypeInfer" id="base"/>
 
         <luaShortNamesManager implementation="com.tang.intellij.lua.psi.search.LuaShortNamesManagerImpl" id="base"/>
+        <!--类工厂虚拟类的类名枚举（doc 类型补全可见 shelter_mainActivity 等）-->
+        <luaShortNamesManager implementation="com.tang.intellij.lua.psi.search.LuaClassFactoryShortNamesManager" id="classFactory"/>
     </extensions>
 </idea-plugin>

@@ -29,6 +29,7 @@ import com.tang.intellij.lua.psi.LuaClassMethod
 import com.tang.intellij.lua.psi.LuaTableField
 import com.tang.intellij.lua.search.SearchContext
 import com.tang.intellij.lua.ty.ITyClass
+import com.tang.intellij.lua.ty.LuaClassFactory
 import com.tang.intellij.lua.ty.TyClass
 import com.tang.intellij.lua.ty.TyParameter
 
@@ -69,6 +70,13 @@ class LuaClassMemberIndex : IntStubIndexExtension<LuaClassMember>() {
                     return TyClass.processSuperClass(type, context) {
                         process(it.className, fieldName, context, processor, false)
                     }
+                } else {
+                    // 类工厂（ClassActivity/ClassDialog/ClassToast）注册的类没有 ---@class 定义：
+                    // 沿工厂基类（Activity/Dialog/Toast）继续查找——否则 guessFieldType 等
+                    // 按类名走索引的路径拿不到基类成员（如 self:getWindow() 返回 any）。
+                    val base = LuaClassFactory.getBaseClassName(context.project, className)
+                    if (base != null && base != className)
+                        return process(base, fieldName, context, processor, true)
                 }
             }
             return true

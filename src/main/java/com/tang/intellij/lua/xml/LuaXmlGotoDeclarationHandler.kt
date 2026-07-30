@@ -83,8 +83,8 @@ class LuaXmlGotoDeclarationHandler : GotoDeclarationHandler {
         val rpcName = rpcNameOf(className, methodName)
 
         val targets = mutableListOf<PsiElement>()
-        targets += findXmlTargets(project, module, rpcName)
         targets += findImplTargets(project, doMethodOf(rpcName), cacheDir)
+        targets += findXmlTargets(project, module, rpcName)
         return if (targets.isEmpty()) null else targets.distinct().toTypedArray()
     }
 

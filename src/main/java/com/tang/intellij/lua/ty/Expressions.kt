@@ -407,6 +407,19 @@ private fun guessFieldType(fieldName: String, type: ITyClass, context: SearchCon
             set = createSerializedClass(fieldName, superClassNames = listOf(base))
     }
 
+    // KeyClass 子类：关联全局数组表里的字符串元素当作 key 字段，类型为字符串字面量
+    if (Ty.isInvalid(set) && !context.forStub) {
+        val key = LuaKeyClass.findKey(context, type.className, fieldName)
+        if (key != null)
+            set = TyStringLiteral(key.name)
+    }
+
+    // ClassViewModel 类：Defines(view) 的 @param view 类型暴露为 View 属性（可 union）
+    if (Ty.isInvalid(set) && !context.forStub && fieldName == "View") {
+        LuaClassFactory.getViewModelDef(context, type.className)
+            ?.viewType?.let { set = it }
+    }
+
     return set
 }
 

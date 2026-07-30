@@ -33,9 +33,20 @@
     • <b>XML 协议注解库</b>：把 share/defs 下的 RPC / Enum / 实体属性 XML 转译为 EmmyLua 注解并以
       SyntheticLibrary 挂载（按体积分包，目录监听自动重建），补全 / 跳转 / 查找引用开箱即用。<br>
     • <b>UE 蓝图注解同步</b>：接收引擎 UnLangService 经 HTTP 推送的 WBP 界面注解，支持多开工程自动匹配。<br>
+    • <b>反射类型动态拉取</b>：设置页配置类型列表（如 UWindow、ViewModelFields），经引擎 /api/reflect-types
+      反射 UClass/UScriptStruct/UEnum 生成注解并缓存为 lib 库（工程打开/配置变更自动拉取，Tools 菜单可手动刷新）。<br>
+    • <b>MVVM 绑定字段注解</b>：引擎读 Lua 工程内 DelegateExports.txt（每行 UClass名,别名），
+      反射组件类 GetXxx/SetXxx 推导可绑定属性，生成 ViewModelFields + 别名类注解并缓存为 lib 库
+      （/api/delegate-exports，工程打开自动拉取，Tools 菜单可手动刷新）。<br>
     • <b>多继承与 @implements</b>：<code>---@class Child : Parent1, Parent2</code>、<code>---@implements I1, I2</code>。<br>
     • <b>可空标记</b>：<code>---@param x? T</code> / <code>---@field x? T</code> ⇒ <code>T|nil</code>。<br>
-    • <b>类工厂类型推断</b>：<code>ClassActivity / ClassDialog / ClassToast</code> 免 <code>---@type</code> 直接得类类型（目录可配）。<br>
+    • <b>类工厂类型推断</b>：<code>ClassActivity / ClassDialog / ClassToast / ClassViewModel</code> 免 <code>---@type</code> 直接得类类型（目录可配）；
+      工厂类自动生成虚拟类定义（继承 Activity/Dialog/Toast/ViewModel），<code>---@return xxx_dialog</code> 等纯名字引用同样继承基类成员，
+      doc 类型名可补全、可 Ctrl+B 跳工厂调用点；
+      ClassViewModel 额外把 <code>Defines(view, fields, delegates)</code> 的 <code>@param view</code> 类型（支持 union）暴露为 <code>View</code> 属性，
+      并内置 ViewModelFields/ViewModelDelegates 注解（fields.Model.* 沿 ViewModelFieldGetters 解析）。<br>
+    • <b>UnLua IntelliSense 库</b>：自动挂载 UE 工程的 UnLua 注解目录（Plugins/Core/UnLua/Intermediate/IntelliSense/Script），
+      UWindow/UUserWidget 等 UCLASS 返回值补全开箱即用。<br>
     • <b>重写检查</b>：子类方法与父类同名方法参数个数不一致时给出警告。<br>
     • <b>调试库自动部署</b>：emmy_core / emmyHelper / mobdebug 按插件版本自动释放到 ~/.emmylua/debugger。<br>
     ]]></description>

@@ -145,6 +145,30 @@ open class ClassMemberCompletionProvider : LuaCompletionProvider() {
                 .withTailText("  [$className]", true)
             completionResultSet.addElement(element)
         }
+
+        //KeyClass 子类：补全关联全局数组表里的 key（字符串元素即字段名）
+        if (LuaKeyClass.isKeyClass(context, className)) {
+            LuaKeyClass.keysOf(context, className).forEach { entry ->
+                if (prefixMatcher.prefixMatches(entry.name)) {
+                    val element = LookupElementBuilder.create(entry.name)
+                        .withIcon(LuaIcons.CLASS_FIELD)
+                        .withTypeText("\"${entry.name}\"", true)
+                        .withTailText("  [$className]", true)
+                    completionResultSet.addElement(element)
+                }
+            }
+        }
+
+        //ClassViewModel 类：Defines 的 @param view 类型暴露为 View 属性建议
+        if (prefixMatcher.prefixMatches("View")) {
+            LuaClassFactory.getViewModelDef(context, className)?.let { def ->
+                val element = LookupElementBuilder.create("View")
+                    .withIcon(LuaIcons.CLASS_FIELD)
+                    .withTypeText(def.viewType?.toString() ?: "", true)
+                    .withTailText("  [$className]", true)
+                completionResultSet.addElement(element)
+            }
+        }
     }
 
     protected fun addMember(completionResultSet: CompletionResultSet,
