@@ -64,6 +64,34 @@ curl -X POST "http://127.0.0.1:63342/api/ue-defs" -H "X-UE-Project: X:/L46_works
 curl -X POST "http://127.0.0.1:63342/api/ue-defs" -H "X-UE-Project: X:/L46_workspace/L46_workspace_trunk/FortySix" -H "X-Def-Op: end-batch"
 ```
 
+## 反向端点：IDE 触发全量重建（直写缓存目录）
+
+IDE Tools 菜单「刷新 UE 界面蓝图类型注解」调用引擎侧：
+
+```
+POST http://127.0.0.1:13888/api/refresh-ue-defs   (端口 = 设置页 ueBridgePort)
+Content-Type: application/json
+
+{"cache_dir": "C:/Users/.../system/lua-ue-defs/<projectHash>"}
+```
+
+- `cache_dir`：IDE 本工程的注解缓存目录（SyntheticLibrary 挂载点）。引擎分帧导出
+  完成后**直接把注解文件写入该目录**（删除不在新结果里的旧文件，写入/覆盖新文件，
+  UTF-8 无 BOM），随后只经上面的 `/api/ue-defs` 通道发一对 `begin-batch`/`end-batch`
+  轻量信号，IDE 收到 `end-batch` 后 VFS 刷新 + 按文件粒度重建索引。
+  文件内容不再逐文件 HTTP 回推。
+- 引擎侧必须校验 `cache_dir`：绝对路径且路径段含 `lua-ue-defs`，否则拒绝直写
+  （防止本机异常请求诱导引擎删写任意目录），并回退到旧的逐文件回推。
+- 请求不带 `cache_dir`（旧版 IDE）时，引擎回退为全量回推
+  （clear → begin-batch → N×upsert → end-batch）。
+
+引擎**立即响应** `{"status":"success"}`（accepted 语义），随后在游戏线程分帧导出。
+不要等导出完成才响应：导出是数十秒级长任务，游戏线程繁忙（PIE/加载/模态）时
+挂等响应会让 IDE read timeout，表现为「刷新没反应」。
+
+单个 WBP 编译回调**不**走直写：仍由引擎异步 `upsert` 推送到 `/api/ue-defs`，
+IDE 落盘（多开 IDE 各自维护自己的缓存目录，广播天然覆盖全部）。
+
 ## 引擎侧改造要点（FEmmyLuaClient）
 
 1. 去掉硬编码 `127.0.0.1:996`，改为枚举注册表目录广播

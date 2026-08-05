@@ -47,9 +47,20 @@ object LuaUEWidgetOpener {
     }
 
     fun openAsset(project: Project, assetPath: String) {
+        val req = JsonObject().apply { addProperty("asset_path", assetPath) }
+        postOpenAsset(project, req, "打开界面:$assetPath")
+    }
+
+    /** 按类名打开界面蓝图（hover 蓝图注解类的文档链接入口；引擎按 WidgetBlueprint 资产名查 AssetRegistry）。 */
+    fun openWidgetBlueprintByClass(project: Project, className: String) {
+        val req = JsonObject().apply { addProperty("class_name", className) }
+        postOpenAsset(project, req, "打开界面蓝图:$className")
+    }
+
+    private fun postOpenAsset(project: Project, req: JsonObject, okContent: String) {
         val port = LuaUEBlueprintSettings.getInstance(project).ueBridgePort
         ApplicationManager.getApplication().executeOnPooledThread {
-            val error = runCatching { callOpenAsset(port, assetPath) }
+            val error = runCatching { callOpenAsset(port, req) }
                 .getOrElse { "连接引擎失败(127.0.0.1:$port)：${it.message}" }
             if (error != null) {
                 LOG.info("open-asset 失败: $error")
@@ -60,16 +71,14 @@ object LuaUEWidgetOpener {
             }else{
                 NotificationGroupManager.getInstance()
                     .getNotificationGroup(NOTIFICATION_GROUP)
-                    .createNotification("打开引擎界面资产", "打开界面:$assetPath", NotificationType.INFORMATION)
+                    .createNotification("打开引擎界面资产", okContent, NotificationType.INFORMATION)
                     .notify(project)
             }
         }
     }
 
     /** @return null 表示成功；否则为错误描述。 */
-    private fun callOpenAsset(port: Int, assetPath: String): String? {
-        val req = JsonObject().apply { addProperty("asset_path", assetPath) }
-
+    private fun callOpenAsset(port: Int, req: JsonObject): String? {
         val (code, body) = HttpRequests.post("http://127.0.0.1:$port/api/open-asset", "application/json")
             .connectTimeout(3500)
             .readTimeout(20000) // 资产加载可能较慢（引擎侧游戏线程带 10s 超时兜底）

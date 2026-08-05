@@ -19,6 +19,7 @@ package com.tang.intellij.test.completion
 import com.intellij.psi.util.PsiTreeUtil
 import com.tang.intellij.lua.psi.LuaCallExpr
 import com.tang.intellij.lua.search.SearchContext
+import com.tang.intellij.test.fileTreeFromText
 
 /**
  * `local M = ClassActivity("xxx")` / `ClassDialog("xxx")` / `ClassToast("xxx")`
@@ -436,6 +437,254 @@ class TestClassFactory : TestCompletionBase() {
         assertTrue(
             "补全后应插入 SwitcherModel，实际：${myFixture.editor.document.text}",
             myFixture.editor.document.text.contains("fields.Model.SwitcherModel")
+        )
+    }
+
+    /** M.X 自身同名 field（ViewModel.ShopBuyPanelModel）应解析到工厂调用点字符串（L46 mall_buy_dialog 场景） */
+    fun `test factory self-named member access resolves to call site`() {
+        val defFile = myFixture.addFileToProject(
+            "client/game_lobby/guis/mall/WBP_UI_ShopM12_BuyPanel_Model.lua",
+            """
+            local M = ClassViewModel("ShopBuyPanelModel")
+            function M:Defines(view, fields, delegates)
+                return true
+            end
+            return M
+            """.trimIndent()
+        )
+        val useFile = myFixture.addFileToProject(
+            "client/game_lobby/guis/mall/mall_buy_dialog.lua",
+            """
+            local ViewModel = require("client.game_lobby.guis.mall.WBP_UI_ShopM12_BuyPanel_Model")
+            local vm = ViewModel.ShopBuyPanelModel.new(nil)
+            """.trimIndent()
+        )
+        val indexExpr = com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(
+            useFile, com.tang.intellij.lua.psi.LuaIndexExpr::class.java
+        ).first { it.name == "ShopBuyPanelModel" }
+        val resolved = indexExpr.reference?.resolve()
+        assertNotNull("ViewModel.ShopBuyPanelModel 应可解析", resolved)
+        assertEquals(defFile.virtualFile, resolved!!.containingFile.virtualFile)
+        assertEquals("\"ShopBuyPanelModel\"", resolved.text)
+    }
+
+    /** Dialog.X 基类注册表访问应解析到工厂调用点字符串 */
+    fun `test factory base registry member access resolves to call site`() {
+        val defFile = myFixture.addFileToProject(
+            "client/game_lobby/guis/mall/mall_buy_dialog.lua",
+            "local M = ClassDialog(\"mallBuyDialog\")"
+        )
+        val useFile = myFixture.addFileToProject(
+            "client/game_lobby/guis/mall/caller.lua",
+            """
+            ---@type Dialog
+            local Dialog
+            local d = Dialog.mallBuyDialog
+            """.trimIndent()
+        )
+        val indexExpr = com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(
+            useFile, com.tang.intellij.lua.psi.LuaIndexExpr::class.java
+        ).first { it.name == "mallBuyDialog" }
+        val resolved = indexExpr.reference?.resolve()
+        assertNotNull("Dialog.mallBuyDialog 应可解析", resolved)
+        assertEquals(defFile.virtualFile, resolved!!.containingFile.virtualFile)
+        assertEquals("\"mallBuyDialog\"", resolved.text)
+    }
+
+    /** 基类 ViewModel 有 `---@field View UView`（真实工程如此）时，Defines 的 @param view 类型应优先 */
+    fun `test view type overrides base class View field`() {
+        // 真实环境：基类 ViewModel 注解带 View:UView，且 UView 无定义
+        myFixture.addFileToProject(
+            "client/sgui/mvvm/ViewModel.lua",
+            """
+            ---@field protected View UView
+            ---@class ViewModel
+            local ViewModel = {}
+            """.trimIndent()
+        )
+        myFixture.addFileToProject(
+            "client/game_lobby/guis/mall/wbp_defs.lua",
+            """
+            ---@class WBP_UI_ShopM12_BuyPanel
+            ---@field Title table
+            local WBP_UI_ShopM12_BuyPanel = {}
+            """.trimIndent()
+        )
+        val modelFile = myFixture.addFileToProject(
+            "client/game_lobby/guis/mall/WBP_UI_ShopM12_BuyPanel_Model.lua",
+            """
+            local M = ClassViewModel("ShopBuyPanelModel")
+
+            ---@param view WBP_UI_ShopM12_BuyPanel
+            function M:Defines(view, fields, delegates)
+                self.title = view.Title
+                return true
+            end
+
+            function M:foo()
+                local v = self.View
+            end
+            return M
+            """.trimIndent()
+        )
+        val viewExpr = com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(
+            modelFile, com.tang.intellij.lua.psi.LuaIndexExpr::class.java
+        ).first { it.text == "self.View" }
+
+        // 类型：Defines 的 @param view 类型，不是基类的 UView
+        val ty = viewExpr.guessType(SearchContext.get(project)).toString()
+        assertTrue("self.View 应为 WBP_UI_ShopM12_BuyPanel，实际：$ty",
+            ty.contains("WBP_UI_ShopM12_BuyPanel"))
+        assertFalse("self.View 不应是基类的 UView，实际：$ty", ty.contains("UView"))
+
+        // 跳转：应落到 Defines 的 @param view 标签，而不是基类的 View 字段
+        val resolved = viewExpr.reference?.resolve()
+        assertNotNull("self.View 应可解析", resolved)
+        assertEquals(modelFile.virtualFile, resolved!!.containingFile.virtualFile)
+        assertTrue("应解析到 @param view 标签，实际：${resolved.text}",
+            resolved.text.startsWith("param view"))
+    }
+
+    /** ClassView：table 推断为同名类（基类 UView），并有自身同名 field */
+    fun `test classview infer and self named field`() {
+        val file = myFixture.addFileToProject(
+            "client/game_lobby/guis/arena/arena_chest_reward_view.lua",
+            """
+            local M = ClassView("arena_chest_reward_view")
+            local a = M.arena_chest_reward_view
+            """.trimIndent()
+        )
+        val call = com.intellij.psi.util.PsiTreeUtil.findChildOfType(file, com.tang.intellij.lua.psi.LuaCallExpr::class.java)!!
+        val ty = call.guessType(SearchContext.get(project)).toString()
+        assertTrue("ClassView 调用应推断为同名类，实际：$ty", ty.contains("arena_chest_reward_view"))
+        assertTrue("注册基类应为 UView", com.tang.intellij.lua.ty.LuaClassFactory.getBaseClassName(project, "arena_chest_reward_view") == "UView")
+
+        val indexExpr = com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(
+            file, com.tang.intellij.lua.psi.LuaIndexExpr::class.java
+        ).first { it.name == "arena_chest_reward_view" }
+        val fieldTy = indexExpr.guessType(SearchContext.get(project)).toString()
+        assertTrue("自身同名 field 应存在，实际：$fieldTy", fieldTy.contains("arena_chest_reward_view"))
+    }
+
+    /** ClassView + ---@type 覆盖：table 与同名 field 都为指定类型 */
+    fun `test classview declared type override`() {
+        myFixture.addFileToProject(
+            "client/game_lobby/guis/arena/wbp_defs.lua",
+            """
+            ---@class WBP_UI_TreasureChestReward_Panel
+            ---@field RewardList table
+            local WBP_UI_TreasureChestReward_Panel = {}
+            """.trimIndent()
+        )
+        val file = myFixture.addFileToProject(
+            "client/game_lobby/guis/arena/arena_chest_reward_view.lua",
+            """
+            ---@type WBP_UI_TreasureChestReward_Panel
+            local M = ClassView("arena_chest_reward_view")
+            local a = M.arena_chest_reward_view
+            local b = M.arena_chest_reward_view.RewardList
+            """.trimIndent()
+        )
+
+        // 同名 field 的类型跟随 ---@type
+        val fieldExpr = com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(
+            file, com.tang.intellij.lua.psi.LuaIndexExpr::class.java
+        ).first { it.text == "M.arena_chest_reward_view" }
+        val fieldTy = fieldExpr.guessType(SearchContext.get(project)).toString()
+        assertTrue("同名 field 应为 ---@type 指定类型，实际：$fieldTy",
+            fieldTy.contains("WBP_UI_TreasureChestReward_Panel"))
+
+        // 端到端：field 的成员解析到指定类的真实字段
+        val memberExpr = com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(
+            file, com.tang.intellij.lua.psi.LuaIndexExpr::class.java
+        ).first { it.name == "RewardList" }
+        val resolved = memberExpr.reference?.resolve()
+        assertNotNull("M.arena_chest_reward_view.RewardList 应可解析", resolved)
+        assertEquals("RewardList", (resolved as? com.tang.intellij.lua.psi.LuaClassMember)?.name)
+
+        // Ctrl+B：同名字段应解析到工厂调用点字符串
+        val fieldTarget = fieldExpr.reference?.resolve()
+        assertNotNull("M.arena_chest_reward_view 应解析到工厂调用点", fieldTarget)
+        assertEquals("\"arena_chest_reward_view\"", fieldTarget!!.text)
+    }
+
+    /** ClassView + ---@type：父类型上补全应出现注册名 field（M.arena| → arena_chest_reward_view） */
+    fun `test classview declared type field completion`() {
+        fileTreeFromText("""
+            --- client/game_lobby/guis/arena/wbp_defs.lua
+
+            ---@class WBP_UI_TreasureChestReward_Panel
+            ---@field RewardList table
+            local WBP_UI_TreasureChestReward_Panel = {}
+
+            --- client/game_lobby/guis/arena/arena_chest_reward_view.lua
+
+            ---@type WBP_UI_TreasureChestReward_Panel
+            local M = ClassView("arena_chest_reward_view")
+            M.arena--[[caret]]
+        """).createAndOpenFileWithCaretMarker()
+        myFixture.completeBasic()
+        // 唯一候选自动插入（lookupElementStrings 为 null 属正常），断言文档内容
+        assertTrue(
+            "应补全出 arena_chest_reward_view，实际 lookups=${myFixture.lookupElementStrings}，文档：${myFixture.editor.document.text}",
+            myFixture.editor.document.text.contains("M.arena_chest_reward_view")
+        )
+    }
+
+    /** FastClassViewModel：与 ClassViewModel 同基类（ViewModel），类型/注册表/跳转全套生效 */
+    fun `test fastclassviewmodel features`() {
+        val defFile = myFixture.addFileToProject(
+            "client/game_lobby/guis/mall/WBP_UI_ShopM12_BuyPanel_Model.lua",
+            """
+            local M = FastClassViewModel("ShopBuyPanelModel")
+            return M
+            """.trimIndent()
+        )
+
+        // 调用处类型推断
+        val call = PsiTreeUtil.findChildOfType(defFile, LuaCallExpr::class.java)!!
+        val ty = call.guessType(SearchContext.get(project)).toString()
+        assertTrue("FastClassViewModel 调用应推断为同名类，实际：$ty", ty.contains("ShopBuyPanelModel"))
+        assertTrue("注册基类应为 ViewModel",
+            com.tang.intellij.lua.ty.LuaClassFactory.getBaseClassName(project, "ShopBuyPanelModel") == "ViewModel")
+
+        // ViewModel.ShopBuyPanelModel 基类注册表跳转
+        val useFile = myFixture.addFileToProject(
+            "client/game_lobby/guis/mall/caller.lua",
+            """
+            ---@type ViewModel
+            local ViewModel
+            local v = ViewModel.ShopBuyPanelModel
+            """.trimIndent()
+        )
+        val indexExpr = com.intellij.psi.util.PsiTreeUtil.findChildrenOfType(
+            useFile, com.tang.intellij.lua.psi.LuaIndexExpr::class.java
+        ).first { it.name == "ShopBuyPanelModel" }
+        val resolved = indexExpr.reference?.resolve()
+        assertNotNull("ViewModel.ShopBuyPanelModel 应可解析", resolved)
+        assertEquals(defFile.virtualFile, resolved!!.containingFile.virtualFile)
+        assertEquals("\"ShopBuyPanelModel\"", resolved.text)
+    }
+
+    /** FastClassViewModel：ViewModel.ShopBuyPanel| 补全应出现注册名 */
+    fun `test fastclassviewmodel registry completion`() {
+        fileTreeFromText("""
+            --- client/game_lobby/guis/mall/WBP_UI_ShopM12_BuyPanel_Model.lua
+
+            local M = FastClassViewModel("ShopBuyPanelModel")
+            return M
+
+            --- client/game_lobby/guis/mall/caller.lua
+
+            ---@type ViewModel
+            local ViewModel
+            local v = ViewModel.ShopBuyPanel--[[caret]]
+        """).createAndOpenFileWithCaretMarker()
+        myFixture.completeBasic()
+        // 唯一候选自动插入（lookupElementStrings 为 null 属正常），断言文档内容
+        assertTrue(
+            "应补全出 ShopBuyPanelModel，实际 lookups=${myFixture.lookupElementStrings}，文档：${myFixture.editor.document.text}",
+            myFixture.editor.document.text.contains("ViewModel.ShopBuyPanelModel")
         )
     }
 }

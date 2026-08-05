@@ -54,27 +54,8 @@ class LuaUEWidgetGotoDeclarationHandler : GotoDeclarationHandler {
         editor: Editor?,
     ): Array<PsiElement>? {
         val literal = sourceElement?.parent as? LuaLiteralExpr ?: return null
-        if (literal.kind != LuaLiteralKind.String) return null
-        val callExpr = literal.parentOfType<LuaCallExpr>() ?: return null
-        val funcName = calledName(callExpr) ?: return null
-
-        val settings = LuaUEBlueprintSettings.getInstance(literal.project)
-        if (funcName !in settings.widgetGotoFunctionSet()) return null
-
-        val assetPath = urlToAssetPath(
-            literal.stringValue,
-            settings.widgetUrlPrefixRules(),
-            settings.widgetUrlTemplate
-        ) ?: return null
-
+        val assetPath = widgetAssetPathOf(literal) ?: return null
         return arrayOf(UeWidgetNavElement(literal, assetPath))
-    }
-
-    /** 取被调函数名：`a:b()` / `a.b()` 取索引名，`f()` 取名字表达式。 */
-    private fun calledName(callExpr: LuaCallExpr): String? = when (val expr = callExpr.expr) {
-        is LuaIndexExpr -> expr.name
-        is LuaNameExpr -> expr.name
-        else -> null
     }
 
     /**
@@ -107,6 +88,33 @@ class LuaUEWidgetGotoDeclarationHandler : GotoDeclarationHandler {
     }
 
     companion object {
+        /**
+         * 界面加载调用（配置的函数名）上的字符串字面量 → 资产对象路径；
+         * 非界面 URL / 非字符串 / 未配置函数返回 null。
+         * 跳转与 hover 文档共用此判定。
+         */
+        fun widgetAssetPathOf(literal: LuaLiteralExpr): String? {
+            if (literal.kind != LuaLiteralKind.String) return null
+            val callExpr = literal.parentOfType<LuaCallExpr>() ?: return null
+            val funcName = calledName(callExpr) ?: return null
+
+            val settings = LuaUEBlueprintSettings.getInstance(literal.project)
+            if (funcName !in settings.widgetGotoFunctionSet()) return null
+
+            return urlToAssetPath(
+                literal.stringValue,
+                settings.widgetUrlPrefixRules(),
+                settings.widgetUrlTemplate
+            )
+        }
+
+        /** 取被调函数名：`a:b()` / `a.b()` 取索引名，`f()` 取名字表达式。 */
+        private fun calledName(callExpr: LuaCallExpr): String? = when (val expr = callExpr.expr) {
+            is LuaIndexExpr -> expr.name
+            is LuaNameExpr -> expr.name
+            else -> null
+        }
+
         /**
          * URL → 资产对象路径。先按前缀规则补前缀，再取末三段（folder/path/name）套模板；
          * 规则未命中或不足三段返回 null。

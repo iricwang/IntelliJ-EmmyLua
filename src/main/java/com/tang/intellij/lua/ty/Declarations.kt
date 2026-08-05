@@ -31,6 +31,7 @@ import com.tang.intellij.lua.psi.*
 import com.tang.intellij.lua.search.GuardType
 import com.tang.intellij.lua.search.SearchContext
 import com.tang.intellij.lua.stubs.LuaFuncBodyOwnerStub
+import com.tang.intellij.lua.ue.LuaUEBlueprintSettings
 
 fun infer(element: LuaTypeGuessable?, context: SearchContext): ITy {
     if (element == null)
@@ -306,6 +307,11 @@ private fun resolveParamType(paramNameDef: LuaParamNameDef, context: SearchConte
      * guess type for p1
      */
     if (paramOwner is LuaClosureExpr) {
+        // 界面加载函数回调参数：
+        // self.context:createWidgetAsync("Insidemain/WBP_UI_Skill_Component_CD", function(widget) end)
+        // → widget : WBP_UI_Skill_Component_CD（URL 末段即蓝图类名）
+        inferWidgetLoadCallbackParam(paramOwner, paramNameDef, context)?.let { return it }
+
         var ret: ITy = Ty.UNKNOWN
         val shouldBe = paramOwner.shouldBe(context)
         shouldBe.each {
@@ -317,4 +323,27 @@ private fun resolveParamType(paramNameDef: LuaParamNameDef, context: SearchConte
         return ret
     }
     return Ty.UNKNOWN
+}
+
+/** 界面加载函数（设置页 widgetGotoFunctions）的回调首参类型：URL 字符串末段的界面蓝图类。 */
+private fun inferWidgetLoadCallbackParam(
+    closure: LuaClosureExpr,
+    paramNameDef: LuaParamNameDef,
+    context: SearchContext,
+): ITy? {
+    if (closure.getIndexFor(paramNameDef) != 0) return null
+    // 闭包必须是界面加载调用的直接参数（stopAt 挡住嵌套闭包误配到外层调用）
+    val callExpr = PsiTreeUtil.getParentOfType(
+        closure, LuaCallExpr::class.java, true, LuaClosureExpr::class.java
+    ) ?: return null
+    val fnName = when (val e = callExpr.expr) {
+        is LuaIndexExpr -> e.name
+        is LuaNameExpr -> e.name
+        else -> null
+    } ?: return null
+    if (fnName !in LuaUEBlueprintSettings.getInstance(context.project).widgetGotoFunctionSet()) return null
+    val url = (callExpr.firstStringArg as? LuaLiteralExpr)?.stringValue ?: return null
+    val className = url.substringAfterLast('/')
+    if (className.isEmpty()) return null
+    return createSerializedClass(className)
 }

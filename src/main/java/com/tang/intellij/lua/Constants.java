@@ -36,4 +36,5 @@ public class Constants {
     public static final String WORD_TABLE = "table";
     public static final String WORD_FUNCTION = "function";
     public static final String WORD_REQUIRE = "require";
+    public static final String WORD_REQUIRE_EX = "require_ex";
 }

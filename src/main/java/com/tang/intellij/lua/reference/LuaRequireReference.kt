@@ -20,10 +20,13 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReferenceBase
+import com.tang.intellij.lua.Constants
 import com.tang.intellij.lua.lang.type.LuaString
 import com.tang.intellij.lua.psi.LuaCallExpr
 import com.tang.intellij.lua.psi.LuaExprStat
 import com.tang.intellij.lua.psi.LuaElementFactory
+import com.tang.intellij.lua.psi.LuaNameExpr
+import com.tang.intellij.lua.psi.resolveRequireExFile
 import com.tang.intellij.lua.psi.resolveRequireFile
 
 /**
@@ -61,7 +64,15 @@ class LuaRequireReference internal constructor(callExpr: LuaCallExpr) : PsiRefer
     }
 
     override fun resolve(): PsiElement? {
-        return if (pathString == null) null else resolveRequireFile(pathString, myElement.project)
+        if (pathString == null) return null
+        // require_ex 按调用方文件位置分流（data.X → client/data 或 server/data）
+        val fnName = (myElement.expr as? LuaNameExpr)?.name
+        if (fnName == Constants.WORD_REQUIRE_EX) {
+            val contextFile = myElement.containingFile.originalFile.virtualFile
+                ?: myElement.containingFile.virtualFile
+            return resolveRequireExFile(pathString, contextFile, myElement.project)
+        }
+        return resolveRequireFile(pathString, myElement.project)
     }
 
     override fun handleElementRename(newElementName: String): PsiElement {

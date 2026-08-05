@@ -29,6 +29,7 @@ import com.tang.intellij.lua.psi.impl.LuaNameExprMixin
 import com.tang.intellij.lua.psi.search.LuaShortNamesManager
 import com.tang.intellij.lua.search.GuardType
 import com.tang.intellij.lua.search.SearchContext
+import com.tang.intellij.lua.ue.LuaUEBlueprintSettings
 
 fun inferExpr(expr: LuaExpr?, context: SearchContext): ITy {
     if (expr == null)
@@ -177,8 +178,16 @@ private fun LuaCallExpr.infer(context: SearchContext): ITy {
             filePath = string.stringValue
         }
         var file: LuaPsiFile? = null
-        if (filePath != null)
-            file = resolveRequireFile(filePath, luaCallExpr.project)
+        if (filePath != null) {
+            file = if (expr.name == Constants.WORD_REQUIRE_EX) {
+                // require_ex 按调用方文件位置分流（data.X → client/data 或 server/data）
+                val contextFile = luaCallExpr.containingFile.originalFile.virtualFile
+                    ?: luaCallExpr.containingFile.virtualFile
+                resolveRequireExFile(filePath, contextFile, luaCallExpr.project)
+            } else {
+                resolveRequireFile(filePath, luaCallExpr.project)
+            }
+        }
         if (file != null)
             return file.guessType(context)
 
@@ -190,6 +199,25 @@ private fun LuaCallExpr.infer(context: SearchContext): ITy {
         val factoryTy = LuaClassFactory.inferCall(luaCallExpr, expr.name)
         if (factoryTy != null)
             return factoryTy
+    }
+
+    // 同步界面加载函数：返回值类型 = URL 字符串末段的界面蓝图类
+    // self:newWidget("BattleGrade/WBP_UI_TreasureChestReward_Panel") → WBP_UI_TreasureChestReward_Panel
+    // （*Async 变体的返回值不是 widget——widget 走回调参数推断，见 Declarations.resolveParamType）
+    run {
+        val fnName = when (expr) {
+            is LuaIndexExpr -> expr.name
+            is LuaNameExpr -> expr.name
+            else -> null
+        }
+        if (fnName != null && !fnName.endsWith("Async") &&
+            fnName in LuaUEBlueprintSettings.getInstance(luaCallExpr.project).widgetGotoFunctionSet()
+        ) {
+            val url = (luaCallExpr.firstStringArg as? LuaLiteralExpr)?.stringValue
+            val className = url?.substringAfterLast('/')?.takeIf { it.isNotEmpty() }
+            if (className != null)
+                return createSerializedClass(className)
+        }
     }
 
     var ret: ITy = Ty.UNKNOWN
@@ -391,6 +419,14 @@ private fun guessFieldType(fieldName: String, type: ITyClass, context: SearchCon
     if (type.className == Constants.WORD_G)
         return TyClass.createGlobalType(fieldName, if (context.forStub) null else context.project)
 
+    // ClassViewModel 工厂类：Defines(view) 的 @param view 类型**优先**作为 View 属性类型——
+    // 基类 ViewModel 的注解里有 `---@field View UView`（真实工程存在），太泛且 UView 通常
+    // 无注解；Defines 标注的 WBP 类型才是该 ViewModel 具体视图的准确类型，直接覆盖成员查找。
+    if (!context.forStub && fieldName == "View") {
+        LuaClassFactory.getViewModelDef(context, type.className)
+            ?.viewType?.let { return it }
+    }
+
     var set:ITy = Ty.UNKNOWN
 
     LuaShortNamesManager.getInstance(context.project).processMembers(type, fieldName, context, Processor {
@@ -401,10 +437,18 @@ private fun guessFieldType(fieldName: String, type: ITyClass, context: SearchCon
     // 类工厂注册的类模拟 fakeApi 中 `---@field X X` 的效果：
     // Dialog.TutorialSelectMaskDialog --> TutorialSelectMaskDialog（基类注册表访问）
     // M.TutorialSelectMaskDialog --> TutorialSelectMaskDialog（类自身的同名 field）
+    // 声明处带 ---@type T（ClassView 等）时字段类型跟随 T
     if (Ty.isInvalid(set) && !context.forStub) {
         val base = LuaClassFactory.getBaseClassName(context.project, fieldName)
-        if (base != null && (base == type.className || fieldName == type.className))
-            set = createSerializedClass(fieldName, superClassNames = listOf(base))
+        if (base != null) {
+            val declared = LuaClassFactory.getDeclaredTypeName(context.project, fieldName)
+            if (declared != null) {
+                if (base == type.className || fieldName == type.className || declared == type.className)
+                    set = createSerializedClass(declared)
+            } else if (base == type.className || fieldName == type.className) {
+                set = createSerializedClass(fieldName, superClassNames = listOf(base))
+            }
+        }
     }
 
     // KeyClass 子类：关联全局数组表里的字符串元素当作 key 字段，类型为字符串字面量
@@ -412,12 +456,6 @@ private fun guessFieldType(fieldName: String, type: ITyClass, context: SearchCon
         val key = LuaKeyClass.findKey(context, type.className, fieldName)
         if (key != null)
             set = TyStringLiteral(key.name)
-    }
-
-    // ClassViewModel 类：Defines(view) 的 @param view 类型暴露为 View 属性（可 union）
-    if (Ty.isInvalid(set) && !context.forStub && fieldName == "View") {
-        LuaClassFactory.getViewModelDef(context, type.className)
-            ?.viewType?.let { set = it }
     }
 
     return set

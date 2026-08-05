@@ -130,7 +130,9 @@ class LuaSettings : PersistentStateComponent<LuaSettings> {
         }
 
         fun isRequireLikeFunctionName(name: String): Boolean {
-            return instance.requireLikeFunctionNames.contains(name) || name == Constants.WORD_REQUIRE
+            // require_ex 固定按 require 类函数处理（不依赖用户配置，L46 工程全局函数）
+            return instance.requireLikeFunctionNames.contains(name) ||
+                name == Constants.WORD_REQUIRE || name == Constants.WORD_REQUIRE_EX
         }
 
         /**

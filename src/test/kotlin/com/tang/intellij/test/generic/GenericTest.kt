@@ -82,6 +82,30 @@ class GenericTest : TestCompletionBase() {
         }
     }
 
+    fun `test generic infer from callback param`() {
+        myFixture.configureByFile("class.lua")
+        doTest("""
+            --- test_generic.lua
+
+            ---@generic T
+            ---@param value T
+            ---@param onChanged fun(newVal: T, oldVal: T)
+            ---@return T
+            local function PROPERTY(value, onChanged)
+                return value
+            end
+
+            ---@param data Emmy
+            local function onDataChanged(data)
+            end
+
+            local data = PROPERTY(nil, onDataChanged)
+            data.--[[caret]]
+        """) {
+            assertTrue(it.contains("sayHello"))
+        }
+    }
+
     fun `test custom iterator`() {
         myFixture.configureByFile("class.lua")
         doTest("""

@@ -22,10 +22,16 @@ import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiElement
+import com.intellij.psi.util.PsiTreeUtil
+import com.tang.intellij.lua.Constants
 import com.tang.intellij.lua.lang.LuaFileType
 import com.tang.intellij.lua.lang.LuaIcons
 import com.tang.intellij.lua.lang.type.LuaString
 import com.tang.intellij.lua.project.LuaSourceRootManager
+import com.tang.intellij.lua.psi.LuaCallExpr
+import com.tang.intellij.lua.psi.LuaNameExpr
+import com.tang.intellij.lua.psi.requireExDataRoot
 
 /**
  *
@@ -43,9 +49,28 @@ class RequirePathCompletionProvider : LuaCompletionProvider() {
 
             val resultSet = completionResultSet.withPrefixMatcher(content)
             addAllFiles(completionParameters, resultSet)
+            // require_ex("data.X")：按调用方位置补充分流目录（client/data 或 server/data）的 data.X 建议
+            addRequireExDataFiles(completionParameters, resultSet, cur)
         }
 
         completionResultSet.stopHere()
+    }
+
+    /** require_ex 专属：调用文件在 client/ 下时把 client/data 内容以 data.X 形式建议（server/、share/ 同理取 server/data）。 */
+    private fun addRequireExDataFiles(completionParameters: CompletionParameters, completionResultSet: CompletionResultSet, cur: PsiElement) {
+        val callExpr = PsiTreeUtil.getParentOfType(cur, LuaCallExpr::class.java) ?: return
+        val fnName = (callExpr.expr as? LuaNameExpr)?.name
+        if (fnName != Constants.WORD_REQUIRE_EX) return
+        val root = requireExDataRoot(completionParameters.originalFile.virtualFile) ?: return
+
+        val project = completionParameters.originalFile.project
+        val sourceRoots = LuaSourceRootManager.getInstance(project).getSourceRoots()
+        for (sourceRoot in sourceRoots) {
+            val dataDir = sourceRoot.findFileByRelativePath("$root/data") ?: continue
+            if (dataDir.isDirectory) {
+                addAllFiles(project, completionResultSet, "data", dataDir.children)
+            }
+        }
     }
 
     private fun addAllFiles(completionParameters: CompletionParameters, completionResultSet: CompletionResultSet) {

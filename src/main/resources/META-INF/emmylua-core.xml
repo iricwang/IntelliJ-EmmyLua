@@ -38,10 +38,13 @@
         <additionalLibraryRootsProvider implementation="com.tang.intellij.lua.ue.LuaUEBlueprintLibraryProvider"/>
         <additionalLibraryRootsProvider implementation="com.tang.intellij.lua.ue.LuaUnLuaIntelliSenseProvider"/>
         <additionalLibraryRootsProvider implementation="com.tang.intellij.lua.ue.LuaUEReflectLibraryProvider"/>
+<!--        <additionalLibraryRootsProvider implementation="com.tang.intellij.lua.ue.LuaUnLuaDefLibraryProvider"/>-->
         <postStartupActivity implementation="com.tang.intellij.lua.xml.LuaXmlStartupActivity"/>
         <postStartupActivity implementation="com.tang.intellij.lua.ue.LuaUEBlueprintStartupActivity"/>
         <postStartupActivity implementation="com.tang.intellij.lua.debugger.LuaDebuggerLibsStartupActivity"/>
         <httpRequestHandler implementation="com.tang.intellij.lua.ue.LuaUEBlueprintHttpHandler"/>
+        <httpRequestHandler implementation="com.tang.intellij.lua.ue.LuaUnLuaDefHttpHandler"/>
+        <httpRequestHandler implementation="com.tang.intellij.lua.ue.LuaUEOpenLuaFileHandler"/>
         <directoryProjectGenerator implementation="com.tang.intellij.lua.project.EmmyLuaDirectoryProjectGenerator"/>
 
         <!--lang-->
@@ -355,6 +358,17 @@
                 groupName="Lua > Emmy doc"
                 language="Lua"
                 implementationClass="com.tang.intellij.lua.codeInsight.inspection.doc.UnresolvedClassInspection"/>
+
+        <localInspection
+                displayName="UE widget member not exists"
+                enabledByDefault="true"
+                level="ERROR"
+                groupName="Lua"
+                language="Lua"
+                implementationClass="com.tang.intellij.lua.codeInsight.inspection.UeWidgetMemberInspection"/>
+
+        <editorTabColorProvider implementation="com.tang.intellij.lua.codeInsight.inspection.ViewModelWidgetTabColorProvider"/>
+        <editorTabTitleProvider implementation="com.tang.intellij.lua.codeInsight.inspection.ViewModelWidgetTabTitleProvider"/>
     </extensions>
 
     <applicationListeners>
@@ -380,6 +394,16 @@
         <action class="com.tang.intellij.lua.ue.LuaUERefreshReflectAction"
                 text="刷新 UE 反射类型注解"
                 id="lua.refreshUeReflectDefs">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+        <action class="com.tang.intellij.lua.ue.LuaUERefreshBlueprintAction"
+                text="刷新 UE 界面蓝图类型注解"
+                id="lua.refreshUeBlueprintDefs">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+        <action class="com.tang.intellij.lua.ue.LuaUnLuaRefreshAction"
+                text="刷新 UnLua IntelliSense 注解"
+                id="lua.refreshUnLuaIntelliSense">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
 

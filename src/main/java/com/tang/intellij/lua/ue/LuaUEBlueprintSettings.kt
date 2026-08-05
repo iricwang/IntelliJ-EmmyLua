@@ -133,7 +133,7 @@ class LuaUEBlueprintSettings(private val project: Project) : PersistentStateComp
 
     class State {
         var ueProjectDir: String = ""
-        var ueBridgePort: Int = 13847
+        var ueBridgePort: Int = 13888
         var widgetGotoFunctions: String = "newWidget;newWidgetAsync;createWidgetAsync;createViewByUrl"
         var widgetUrlTemplate: String = "/Game/Res/SGUI/{folder}/{path}/{name}.{name}"
         var widgetUrlPrefixes: String = "Common=Common;*=Panel"

@@ -48,10 +48,14 @@ class TestLuaUEBlueprintHandler : LuaTestBase() {
         ueProject?.let { request.headers().set("X-UE-Project", it) }
         op?.let { request.headers().set("X-Def-Op", it) }
         path?.let { request.headers().set("X-Def-Path", it) }
-        // execute 实现不使用 urlDecoder/context，传占位对象即可
+        // execute 成功路径会调 RestService.sendOk(request, ctx)，需要 ctx.channel()
+        // 返回真实 Channel（sendOk 内部 writeAndFlush）；其余方法不触碰，返回 null 即可。
+        val channel = io.netty.channel.embedded.EmbeddedChannel()
         val ctx = java.lang.reflect.Proxy.newProxyInstance(
             javaClass.classLoader, arrayOf(io.netty.channel.ChannelHandlerContext::class.java)
-        ) { _, _, _ -> null } as io.netty.channel.ChannelHandlerContext
+        ) { _, method, _ ->
+            if (method.name == "channel") channel else null
+        } as io.netty.channel.ChannelHandlerContext
         return handler.execute(io.netty.handler.codec.http.QueryStringDecoder("/api/ue-defs"), request, ctx)
     }
 

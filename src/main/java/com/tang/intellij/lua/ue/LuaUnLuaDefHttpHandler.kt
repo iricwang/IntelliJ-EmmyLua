@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2017. tangzx(love.tangzx@qq.com)
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -24,24 +24,19 @@ import io.netty.handler.codec.http.QueryStringDecoder
 import org.jetbrains.ide.RestService
 
 /**
- * UE 蓝图注解接收端：`POST /api/ue-defs`（IDE 内建 Web Server，每实例独立端口，
- * 端口经 IDE 注册表文件告知引擎侧）。
+ * UnLua IntelliSense 注解接收端：`POST /api/unla-defs`（IDE 内建 Web Server）。
  *
- * 请求约定：
- * - `X-UE-Project`: UE 工程根目录（必填，广播自过滤用；多开 IDE 各自匹配）
+ * 协议与 [LuaUEBlueprintHttpHandler] 一致：
+ * - `X-UE-Project`: UE 工程根目录（必填，广播自过滤；复用 [LuaUEBlueprintManager.matches]）
  * - `X-Def-Op`: `upsert`（默认）| `delete` | `clear` | `begin-batch` | `end-batch`
- * - `X-Def-Path`: 相对路径（如 `GamePlay/WBP_BagItem.lua`，upsert/delete 必填）
+ * - `X-Def-Path`: 相对路径（upsert/delete 必填）
  * - body: 注解文本（UTF-8，upsert 时读取）
  *
- * 批量推送（一次编译几百个 WBP）用 begin-batch/end-batch 包裹，IDE 合并为一次 VFS 刷新。
- * 全量重建（refresh-ue-defs）由引擎直写缓存目录，只发一对 begin/end-batch 信号（无 upsert），
- * end-batch 同样触发防抖刷新把磁盘改动刷进索引。
- * [execute] 返回字符串 = 错误描述，框架自动回错误响应；返回 null 时框架**不发任何响应**，
- * 因此成功路径必须自己调 [RestService.sendOk]（否则调用方一直挂到超时）。
+ * 返回 null 表示 200 OK，返回字符串作为错误描述发给调用方。
  */
-class LuaUEBlueprintHttpHandler : RestService() {
+class LuaUnLuaDefHttpHandler : RestService() {
 
-    override fun getServiceName(): String = "ue-defs"
+    override fun getServiceName(): String = "unla-defs"
 
     override fun isMethodSupported(method: HttpMethod): Boolean = method == HttpMethod.POST
 
@@ -54,11 +49,10 @@ class LuaUEBlueprintHttpHandler : RestService() {
         val ueProject = headers.get("X-UE-Project")?.trim().orEmpty()
         if (ueProject.isEmpty()) return "missing X-UE-Project header"
 
-        val manager = ProjectManager.getInstance().openProjects
-            .asSequence()
-            .map { LuaUEBlueprintManager.getInstance(it) }
-            .firstOrNull { it.matches(ueProject) }
+        val matchedProject = ProjectManager.getInstance().openProjects
+            .firstOrNull { LuaUEBlueprintManager.getInstance(it).matches(ueProject) }
             ?: return "no matching project for: $ueProject"
+        val manager = LuaUnLuaDefManager.getInstance(matchedProject)
 
         val op = headers.get("X-Def-Op")?.trim()?.lowercase().orEmpty().ifEmpty { "upsert" }
         val result = when (op) {
@@ -88,7 +82,6 @@ class LuaUEBlueprintHttpHandler : RestService() {
             }
             else -> "unknown X-Def-Op: $op"
         }
-        // execute 返回 null 时 RestService.process 不发响应（设计如此），需自己 sendOk。
         if (result == null) {
             org.jetbrains.ide.RestService.sendOk(request, context)
         }

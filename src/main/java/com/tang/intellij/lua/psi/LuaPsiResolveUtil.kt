@@ -17,6 +17,7 @@
 package com.tang.intellij.lua.psi
 
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiManager
 import com.intellij.psi.util.PsiTreeUtil
@@ -131,6 +132,22 @@ fun multiResolve(indexExpr: LuaIndexExpr, context: SearchContext): List<PsiEleme
             list.add(m)
         true
     })
+    if (list.isEmpty() && !context.forStub) {
+        // 类工厂虚拟字段（Dialog.X 基类注册表 / M.X 自身同名 field / ---@type 覆盖后的同名字段）：
+        // 解析到工厂调用点——工厂注册类的"定义处"
+        val base = LuaClassFactory.getBaseClassName(context.project, name)
+        if (base != null) {
+            val declared = LuaClassFactory.getDeclaredTypeName(context.project, name)
+            var matched = false
+            type.eachTopClass(Processor { ty ->
+                if (base == ty.className || name == ty.className || (declared != null && declared == ty.className)) matched = true
+                !matched
+            })
+            if (matched) {
+                LuaClassFactory.resolveClassCallSite(context.project, name)?.let { list.add(it) }
+            }
+        }
+    }
     if (list.isEmpty()) {
         // KeyClass 子类：解析到关联全局数组表里的字符串元素
         type.eachTopClass(Processor { ty ->
@@ -155,6 +172,19 @@ fun resolve(indexExpr: LuaIndexExpr, context: SearchContext): PsiElement? {
 
 fun resolve(indexExpr: LuaIndexExpr, idString: String, context: SearchContext): PsiElement? {
     val type = indexExpr.guessParentType(context)
+    // ClassViewModel 工厂类：View 属性优先解析到 Defines 的 @param view 标签
+    // （优先于基类 ViewModel 的 `---@field View UView`，与 guessFieldType 的类型覆盖一致）
+    if (idString == "View" && !context.forStub) {
+        var viewParam: PsiElement? = null
+        type.eachTopClass(Processor { ty ->
+            val def = LuaClassFactory.getViewModelDef(context, ty.className)
+            if (def?.viewParam != null) {
+                viewParam = def.viewParam
+            }
+            viewParam == null
+        })
+        if (viewParam != null) return viewParam
+    }
     var ret: PsiElement? = null
     type.eachTopClass(Processor { ty ->
         ret = ty.findMember(idString, context)
@@ -162,23 +192,26 @@ fun resolve(indexExpr: LuaIndexExpr, idString: String, context: SearchContext): 
             return@Processor false
         true
     })
+    if (ret == null && !context.forStub) {
+        // 类工厂虚拟字段（Dialog.X 基类注册表 / M.X 自身同名 field / ---@type 覆盖后的同名字段）：
+        // 解析到工厂调用点——工厂注册类的"定义处"
+        val base = LuaClassFactory.getBaseClassName(context.project, idString)
+        if (base != null) {
+            val declared = LuaClassFactory.getDeclaredTypeName(context.project, idString)
+            type.eachTopClass(Processor { ty ->
+                if (base == ty.className || idString == ty.className || (declared != null && declared == ty.className)) {
+                    ret = LuaClassFactory.resolveClassCallSite(context.project, idString)
+                }
+                ret == null
+            })
+        }
+    }
     if (ret == null) {
         // KeyClass 子类：解析到关联全局数组表里的字符串元素（key 字段的定义处）
         type.eachTopClass(Processor { ty ->
             val key = LuaKeyClass.findKey(context, ty.className, idString)
             if (key != null) {
                 ret = key.literal
-                return@Processor false
-            }
-            true
-        })
-    }
-    if (ret == null && idString == "View") {
-        // ClassViewModel 类：View 属性解析到 Defines 的 @param view 标签
-        type.eachTopClass(Processor { ty ->
-            val def = LuaClassFactory.getViewModelDef(context, ty.className)
-            if (def?.viewParam != null) {
-                ret = def.viewParam
                 return@Processor false
             }
             true
@@ -219,4 +252,46 @@ fun resolveRequireFile(pathString: String?, project: Project): LuaPsiFile? {
             return psiFile
     }
     return null
+}
+
+/**
+ * L46 require_ex 的调用方感知解析。
+ *
+ * 运行时语义（game/global_functions.lua 的 require_ex）：`data.X` 前缀按运行端重写——
+ * 客户端读 `client.data.X`，DS 读 `server.data.X`。IDE 静态解析按**调用文件**位置分流：
+ * - 路径含 `/client/` → 解析到 `client/data/X.lua`
+ * - 路径含 `/server/` 或 `/share/`（share 双侧复用，数据定义以 server 为准）→ `server/data/X.lua`
+ * - 其余位置（game/、editor/ 等）不分流，回退普通 require 解析
+ *
+ * 非 `data.` 前缀的 require_ex 参数与 require 语义一致，也走回退分支。
+ *
+ * @param contextFile 调用方文件（补全场景注意传 originalFile 的 virtualFile）
+ */
+fun resolveRequireExFile(pathString: String?, contextFile: VirtualFile?, project: Project): LuaPsiFile? {
+    if (pathString != null && pathString.startsWith("data.")) {
+        val root = requireExDataRoot(contextFile)
+        if (root != null) {
+            val fileName = "$root/$pathString".replace('.', '/')
+            var f = LuaFileUtil.findFile(project, fileName)
+            if (f == null || f.isDirectory) {
+                f = LuaFileUtil.findFile(project, "$fileName/init")
+            }
+            if (f != null && !f.isDirectory) {
+                val psiFile = PsiManager.getInstance(project).findFile(f)
+                if (psiFile is LuaPsiFile)
+                    return psiFile
+            }
+        }
+    }
+    return resolveRequireFile(pathString, project)
+}
+
+/** require_ex 分流的数据根目录名："client" / "server"；不分流返回 null。 */
+fun requireExDataRoot(contextFile: VirtualFile?): String? {
+    val path = contextFile?.path ?: return null
+    return when {
+        path.contains("/client/") -> "client"
+        path.contains("/server/") || path.contains("/share/") -> "server"
+        else -> null
+    }
 }

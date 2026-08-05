@@ -31,7 +31,13 @@ class LuaUEBlueprintStartupActivity : ProjectActivity {
         manager.initMounted()
         manager.registerIde()
         manager.refreshNow()
+        // 「组件不存在」tab/Project 树标记服务（懒服务，需显式触活订阅 daemon 事件）
+        com.tang.intellij.lua.codeInsight.inspection.ViewModelWidgetProblemService.getInstance(project)
         // 工程打开时按类型列表自动拉取反射注解（引擎离线则静默跳过）
         LuaUEReflectManager.getInstance(project).refresh()
+        // 同步初始化 UnLua IntelliSense 接收端缓存（引擎在 IDE 关闭期间推送落盘的改动也刷进索引）
+        val unlaManager = LuaUnLuaDefManager.getInstance(project)
+        unlaManager.initMounted()
+        unlaManager.refreshNow()
     }
 }

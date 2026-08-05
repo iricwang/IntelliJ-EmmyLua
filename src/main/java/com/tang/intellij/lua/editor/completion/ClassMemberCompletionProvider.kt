@@ -146,6 +146,39 @@ open class ClassMemberCompletionProvider : LuaCompletionProvider() {
             completionResultSet.addElement(element)
         }
 
+        //类工厂注册类的关联 field 建议：
+        // UView.xxxView（基类注册表）、---@type 覆盖后父类型上的注册名 field（ClassView 机制）。
+        // 性能：基类匹配走索引缓存；@type 反查走后台预建快照（getRegisteredByDeclaredType），
+        // 绝不在补全线程逐文件解析 PSI（否则 self. 补全必卡）。
+        val suggested = HashSet<String>()
+        LuaClassFactory.processRegisteredClasses(project, Processor { registeredName ->
+            if (registeredName != className && registeredName !in suggested &&
+                prefixMatcher.prefixMatches(registeredName) &&
+                LuaClassFactory.getBaseClassName(project, registeredName) == className
+            ) {
+                suggested.add(registeredName)
+                val declared = LuaClassFactory.getDeclaredTypeName(project, registeredName)
+                val element = LookupElementBuilder.create(registeredName)
+                    .withIcon(LuaIcons.CLASS_FIELD)
+                    .withTypeText(declared ?: registeredName, true)
+                    .withTailText("  [$className]", true)
+                completionResultSet.addElement(element)
+            }
+            true
+        })
+        LuaClassFactory.getRegisteredByDeclaredType(project, className).forEach { registeredName ->
+            if (registeredName != className && registeredName !in suggested &&
+                prefixMatcher.prefixMatches(registeredName)
+            ) {
+                suggested.add(registeredName)
+                val element = LookupElementBuilder.create(registeredName)
+                    .withIcon(LuaIcons.CLASS_FIELD)
+                    .withTypeText(className, true)
+                    .withTailText("  [$className]", true)
+                completionResultSet.addElement(element)
+            }
+        }
+
         //KeyClass 子类：补全关联全局数组表里的 key（字符串元素即字段名）
         if (LuaKeyClass.isKeyClass(context, className)) {
             LuaKeyClass.keysOf(context, className).forEach { entry ->

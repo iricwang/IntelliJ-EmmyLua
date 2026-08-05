@@ -83,6 +83,13 @@ class GenericAnalyzer(arg: ITy, private val par: ITy) : TyVisitor() {
     }
 
     private fun visitSig(arg: IFunSignature, par: IFunSignature) {
+        // fun(newVal: T, oldVal: T) 这类形参中的泛型，需要用实参函数的形参类型来推导
+        val argParams = arg.params
+        val parParams = par.params
+        for (i in parParams.indices) {
+            val argTy = argParams.getOrNull(i)?.ty ?: break
+            warp(argTy) { parParams[i].ty.accept(this) }
+        }
         warp(arg.returnTy) { par.returnTy.accept(this) }
     }
 
